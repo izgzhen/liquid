@@ -1,0 +1,12 @@
+#!/bin/bash
+
+export JAVA_OPTS="-Xms512m -Xmx4G"
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+apk=$(realpath $1)
+spec=$(realpath $2)
+out=$(realpath $3)
+interactive=$4
+cd $DIR
+
+sbt "run --apk $apk --spec $spec --out $out $interactive"

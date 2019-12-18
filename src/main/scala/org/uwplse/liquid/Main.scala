@@ -1,7 +1,29 @@
 package org.uwplse.liquid
 
+import java.io.FileInputStream
+import org.apache.commons.cli.{DefaultParser, Option, Options}
+import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.constructor.Constructor
+
 object Main {
   def main(args: Array[String]): Unit = {
-    println("Hello world")
+    val options = new Options
+    options.addOption(Option.builder.argName("apk").hasArg.longOpt("apk").desc("apk path").build)
+    options.addOption(Option.builder.argName("spec").hasArg.longOpt("spec").desc("spec path").build)
+    options.addOption(Option.builder.argName("out").hasArg.longOpt("out").desc("output JSON path").build)
+    options.addOption("i", false, "Interactive mode")
+
+    val parser = new DefaultParser
+    val cmd = parser.parse(options, args)
+    val apkPath = cmd.getOptionValue("apk")
+    val specPath = cmd.getOptionValue("spec")
+    val outPath = cmd.getOptionValue("out")
+    val interactive = cmd.hasOption('i')
+
+    val yaml = new Yaml(new Constructor(classOf[Config]))
+    val config = yaml.load(new FileInputStream("config.yaml")).asInstanceOf[Config]
+    config.interactive = interactive
+
+    Analyze.run(config, apkPath, specPath, outPath)
   }
 }
