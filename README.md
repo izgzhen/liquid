@@ -4,7 +4,7 @@ Liquid project includes a DSL for describing the low-level
 pattern of Android/Java bytecode and a matching engine that matches
 the pattern against given APK or classpath.
 
-Liquid DSL features an intuitive syntax resembling the actual code the be
+Liquid DSL features an intuitive syntax resembling the actual code to be
 matched:
 
 ```
