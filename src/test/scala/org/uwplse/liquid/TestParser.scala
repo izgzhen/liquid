@@ -41,12 +41,12 @@ class TestParser extends TestCase {
 
   @Test def testParseMethod(): Unit = {
     val parser = new SpecParser()
-    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), List(Invoke("exec", Arguments.Contain(Set())))),
+    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(Invoke("exec", Arguments.Contain(Set())))),
       parser.parse(parser.pMethodSpec,
         """_ _f(...) {
           |  exec(...);
           |}""".stripMargin).get)
-    assertEquals(MethodSpec(NamedWildcard("ret"),StringIdentifier("onClick"), List()),
+    assertEquals(MethodSpec(NamedWildcard("ret"), StringIdentifier("onClick"), Map(), List()),
       parser.parse(parser.pMethodSpec,
         """_ret onClick(...) {
           |}""".stripMargin).get)
@@ -63,8 +63,8 @@ class TestParser extends TestCase {
 
   @Test def testParseClass(): Unit = {
     val parser = new SpecParser()
-    assertEquals(ClassSpec(NamedWildcard("H"), None, List(),
-      List(MethodSpec(NamedWildcard("_r1"), NamedWildcard("f"), List(
+    assertEquals(ClassSpec(NamedWildcard("H"), None,
+      List(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(
         Invoke("exec", Arguments.Contain(Set())),
         Invoke("setIntentPackage", Arguments.Are(List(LitExpr(StringLit("com.android.vending"))))))))),
       parser.parse(parser.pClassSpec,
@@ -75,7 +75,7 @@ class TestParser extends TestCase {
           |  }
           |}""".stripMargin).get)
 
-    assertEquals(ClassSpec(NamedWildcard("_r2"), Some(StringIdentifier("android.content.DialogInterface.OnClickListener")), List(), List()),
+    assertEquals(ClassSpec(NamedWildcard("_r1"), Some(StringIdentifier("android.content.DialogInterface.OnClickListener")), List()),
       parser.parse(parser.pClassSpec,
         """class _(android.content.DialogInterface.OnClickListener) {
           |}""".stripMargin).get)

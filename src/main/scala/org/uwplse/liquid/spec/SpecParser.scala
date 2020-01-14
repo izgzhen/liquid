@@ -28,8 +28,8 @@ class SpecParser extends RegexParsers {
     "_r%s".format(counter)
   }
 
-  def name: Parser[String]      = """[a-zA-Z]+""".r    ^^ { _.toString }
-  def stringId: Parser[String]      = """[<>a-zA-Z\\.]+""".r    ^^ { _.toString }
+  def pName: Parser[String]      = """[a-zA-Z]+""".r    ^^ { _.toString }
+  def pStringId: Parser[String]      = """[<>a-zA-Z\\.]+""".r    ^^ { _.toString }
   def stringLit: Parser[String] = """(\\.|[^"\\])*""".r    ^^ { _.toString }
   def underscore: Parser[Token] = "_"                  ^^ (_ => UNDERSCORE)
   def leftParen: Parser[Token] = """\(""".r            ^^ (_ => LEFTBRACE)
@@ -44,7 +44,7 @@ class SpecParser extends RegexParsers {
   def dots: Parser[String] = """\.\.\.""".r         ^^ { _.toString }
 
   def pId: Parser[IdentifierPattern] = {
-    val namedWildcard = underscore ~ name ^^ {
+    val namedWildcard = underscore ~ pName ^^ {
       case _ ~ wd => {
         names.add(wd)
         NamedWildcard(wd)
@@ -55,11 +55,11 @@ class SpecParser extends RegexParsers {
       names.add(name)
       NamedWildcard(name)
     })
-    val idString = stringId ^^ (s => StringIdentifier(s))
+    val idString = pStringId ^^ (s => StringIdentifier(s))
     namedWildcard | wildcard | idString
   }
   def pDecl: Parser[PatternDecl] = {
-    val methodSig = """methodSig""".r ~ name ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
+    val methodSig = """methodSig""".r ~ pName ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
       case _ ~ name ~ _ ~ classId ~ _ ~ methodId ~ _ => MethodSignature(name, classId, methodId)
     }
     methodSig
@@ -72,7 +72,7 @@ class SpecParser extends RegexParsers {
     stringLiteral | intLit | trueLit | falseLit
   }
   def pExpr: Parser[Expr] = {
-    val pVarExpr = name ^^ (l => VarExpr(l))
+    val pVarExpr = pName ^^ (l => VarExpr(l))
     val pLitExpr = pLiteral ^^ (l => LitExpr(l))
     pLitExpr | pVarExpr
   }
@@ -82,12 +82,14 @@ class SpecParser extends RegexParsers {
     pAnyArgs | pSomeArgs
   }
   def pStmt: Parser[StatementSpec] =
-    name ~ leftParen ~ pArgs ~ rightParen ~ semiColon ^^ {
+    pName ~ leftParen ~ pArgs ~ rightParen ~ semiColon ^^ {
       case name ~ _ ~ args ~ _ ~ _ => Invoke(name, args)
     }
   def pMethodSpec: Parser[MethodSpec] = {
-    pId ~ pId ~ leftParen ~ dots ~ rightParen ~ leftCurlyBrace ~ pStmt.* ~ rightCurlyBrace ^^ {
-      case retId ~ name ~ _ ~ _ ~ _ ~ _ ~ stmts ~ _ => MethodSpec(retId, name, stmts)
+    pId ~ pId ~ leftParen ~ dots ~ rightParen ~ leftCurlyBrace ~ pLocalVarDecl.* ~ pStmt.* ~ rightCurlyBrace ^^ {
+      case retId ~ name ~ _ ~ _ ~ _ ~ _ ~ locals ~ stmts ~ _ => {
+        MethodSpec(retId, name, locals.toMap, stmts)
+      }
     }
   }
   def pParentClass : Parser[Option[IdentifierPattern]] = {
@@ -95,14 +97,14 @@ class SpecParser extends RegexParsers {
     val noParent = "" ^^ { _ => None }
     parentId | noParent
   }
-  def pAttr: Parser[Attribute] = {
-    pId ~ pId ~ semiColon ^^ {
-      case typeId ~ varId ~ _ => Attribute(typeId, varId)
+  def pLocalVarDecl: Parser[(String, String)] = {
+    pStringId ~ pName ~ semiColon ^^ {
+      case typeId ~ varName ~ _ => (varName, typeId)
     }
   }
   def pClassSpec: Parser[ClassSpec] = {
-    """class""".r ~ pId ~ pParentClass ~ leftCurlyBrace ~ pAttr.* ~ pMethodSpec.* ~ rightCurlyBrace ^^ {
-      case _ ~ name ~ parent ~ _ ~ attributes ~ methods ~ _ => ClassSpec(name, parent, attributes, methods)
+    """class""".r ~ pId ~ pParentClass ~ leftCurlyBrace ~ pMethodSpec.* ~ rightCurlyBrace ^^ {
+      case _ ~ name ~ parent ~ _ ~ methods ~ _ => ClassSpec(name, parent, methods)
     }
   }
   def pAppSpec: Parser[AppSpec] = {

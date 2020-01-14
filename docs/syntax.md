@@ -26,15 +26,16 @@ Currently, there are following types of `PatternDecl`:
 
 ## `ClassSpec`
 
-Similar to the Java class, each `ClassSpec` specifies a list of attribute variables and a list
-of `MethodSpec`.
+Similar to the Java class, each `ClassSpec` specifies a list of `MethodSpec`.
 
-Each attribute is a pair of type identifier and name identifier, e.g. `File _f`.
 
 Each `MethodSpec` has a return type (`id`), a method name (`id`),
-a list of parameters (each is a pair of type `id` and var `id`), and a method body (a list of `StatementSpec`)
+a list of parameters (each is a pair of type `id` and var `id`), and a method body.
 
-`StatementSpec` specifies different types of statements:
+The method body includes a list of local variable declarations (`LocalVarDecl`)
+and a list of statements (`StatementSpec`).
+Each `LocalVarDecl` is a pair of type identifier and name identifier, e.g. `File _f;`.
+Each `StatementSpec` specifies different types of statements:
 
 - Invoke statements: `<f>(..., <args>);`
   - `<f>`: `name` name of method signature pattern

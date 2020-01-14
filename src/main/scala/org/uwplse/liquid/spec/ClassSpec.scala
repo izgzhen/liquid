@@ -7,10 +7,8 @@ import soot.SootClass
 
 import scala.jdk.CollectionConverters._
 
-case class Attribute(`type`: IdentifierPattern, name: IdentifierPattern)
-
 case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
-                     attributes: List[Attribute], methods: List[MethodSpec]) {
+                     methods: List[MethodSpec]) {
   def matches(config: Config, appSpec: AppSpec, cls: SootClass) : Constraint = {
     val c1 = name.matches(cls.getName)
     val filteredOut = parent match {
