@@ -1,12 +1,15 @@
 package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.spec.Expr.VarExpr
-import soot.Value
+import soot.{Local, SootMethod, Value}
+import soot.jimple.Stmt
+import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis
+import soot.toolkits.graph.CompleteUnitGraph
 
 sealed abstract class SemanticVal extends Product with Serializable
 
 object SemanticVal {
-  final case class SootValue(v: Value) extends SemanticVal
+  final case class SootValue(v: Value, ctx: SootValueContext) extends SemanticVal
   final case class Name(name: String) extends SemanticVal
 }
 
@@ -17,16 +20,43 @@ sealed abstract class Constraint extends Product with Serializable {
 }
 
 object Constraint {
+
+  val aliasAnalysisMap: scala.collection.mutable.Map[SootMethod, LocalMustAliasAnalysis] = scala.collection.mutable.Map()
+
+  def isAlias(l1: Local, l2: Local, stmt1: Stmt, stmt2: Stmt, m: SootMethod): Boolean = {
+    if (!aliasAnalysisMap.contains(m)) {
+      val ug = new CompleteUnitGraph(m.getActiveBody)
+      aliasAnalysisMap.addOne(m, new LocalMustAliasAnalysis(ug, false))
+    }
+    val analysis = aliasAnalysisMap(m)
+    analysis.mustAlias(l1, stmt1, l2, stmt2)
+  }
+
+  def equalValue(v1: SemanticVal, v2: SemanticVal): Boolean = {
+    (v1, v2) match {
+      case (SemanticVal.SootValue(sv1, ctx1), SemanticVal.SootValue(sv2, ctx2)) => {
+        ctx2.methodEnv.sootMethod == ctx1.methodEnv.sootMethod &&
+        {
+          (sv1, sv2) match {
+            case (l1:Local, l2: Local) =>
+              isAlias(l1, l2, ctx2.stmt, ctx1.stmt, ctx1.methodEnv.sootMethod)
+            case _ => throw new NotImplementedError()
+          }
+        }
+      }
+    }
+  }
+
   final case class NameEquals(binder: String, name: String) extends Constraint {
     def solve(): List[Map[String, SemanticVal]] = {
       List(Map((binder, SemanticVal.Name(name))))
     }
   }
 
-  final case class ExprEquals(e: Expr, v: Value) extends Constraint {
+  final case class ExprEquals(e: Expr, v: Value, ctx: SootValueContext) extends Constraint {
     def solve(): List[Map[String, SemanticVal]] = {
       e match {
-        case VarExpr(binder) => List(Map((binder, SemanticVal.SootValue(v))))
+        case VarExpr(binder) => List(Map((binder, SemanticVal.SootValue(v, ctx))))
         case _ => throw new NotImplementedError()
       }
     }
@@ -38,7 +68,7 @@ object Constraint {
       val ms2 = c2.solve()
       ms1.flatMap(m1 => ms2.flatMap(m2 => {
         val common = m1.keySet intersect m2.keySet
-        if (common.nonEmpty && !common.forall(k => m1(k) == m2(k))) {
+        if (common.nonEmpty && !common.forall(k => equalValue(m1(k), m2(k)))) {
           None
         } else {
           Some(m1 ++ m2)

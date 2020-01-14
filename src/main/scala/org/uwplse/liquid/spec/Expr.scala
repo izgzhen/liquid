@@ -2,10 +2,13 @@ package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.spec.Constraint.ExprEquals
 import soot.Value
+import soot.jimple.Stmt
+
+case class SootValueContext(stmt: Stmt, methodEnv: MethodEnv)
 
 sealed abstract class Expr extends Product with Serializable {
-  def matches(value: Value) : Constraint = {
-    ExprEquals(this, value)
+  def matches(value: Value, valueContext: SootValueContext) : Constraint = {
+    ExprEquals(this, value, valueContext)
   }
 }
 

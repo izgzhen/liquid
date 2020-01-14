@@ -1,7 +1,7 @@
 package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.spec.Constraint.False
-import soot.jimple.{InstanceInvokeExpr, InvokeExpr, Stmt}
+import soot.jimple.{InstanceInvokeExpr, Stmt}
 
 import scala.jdk.CollectionConverters._
 
@@ -29,7 +29,7 @@ object StatementSpec {
           case Arguments.Contain(_) => Constraint.True()
           case Arguments.Are(args) =>
             if (args.size == argsToMatch.size) {
-              Constraint.foldAnd(args.zipWithIndex.map { case (arg, i) => arg.matches(argsToMatch(i))})
+              Constraint.foldAnd(args.zipWithIndex.map { case (arg, i) => arg.matches(argsToMatch(i), SootValueContext(stmt, methodEnv))})
             } else {
               Constraint.False()
             }
