@@ -35,7 +35,7 @@ class TestParser extends TestCase {
     val parser = new SpecParser()
     assertEquals(Invoke("exec", List()),  parser.parse(parser.pStmt, """exec(...);""").get)
     assertEquals(Invoke("setIntentData", List(LitExpr(StringLit("market://details?id=com.great.animalpop")))),
-      parser.parse(parser.pStmt, """setIntentData(..., "market://details?id=com.great.animalpop");""").get)
+      parser.parse(parser.pStmt, """setIntentData("market://details?id=com.great.animalpop");""").get)
   }
 
   @Test def testParseMethod(): Unit = {
@@ -70,7 +70,7 @@ class TestParser extends TestCase {
         """class _H {
           |  _ _f(...) {
           |    exec(...);
-          |    setIntentPackage(..., "com.android.vending");
+          |    setIntentPackage("com.android.vending");
           |  }
           |}""".stripMargin).get)
 

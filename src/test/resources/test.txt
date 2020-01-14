@@ -4,7 +4,7 @@ methodSig deleteFile(java.io.File, delete)
 class _Test {
     File f;
     _ret _main(...) {
-        initFileReader(..., f);
-        deleteFile(..., f);
+        initFileReader(f);
+        deleteFile(f);
     }
 }
