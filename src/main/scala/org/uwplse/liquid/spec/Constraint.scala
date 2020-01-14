@@ -1,8 +1,9 @@
 package org.uwplse.liquid.spec
 
-import org.uwplse.liquid.spec.Expr.VarExpr
+import org.uwplse.liquid.spec.Expr.{LitExpr, VarExpr}
+import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit}
 import soot.{Local, SootMethod, Value}
-import soot.jimple.Stmt
+import soot.jimple.{IntConstant, Stmt}
 import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis
 import soot.toolkits.graph.CompleteUnitGraph
 
@@ -22,6 +23,12 @@ sealed abstract class Constraint extends Product with Serializable {
 object Constraint {
 
   val aliasAnalysisMap: scala.collection.mutable.Map[SootMethod, LocalMustAliasAnalysis] = scala.collection.mutable.Map()
+
+  // TODO: reason about this (https://github.com/izgzhen/liquid/issues/8)
+  //   compute "and" with an empty list of constraint results in an empty list
+  def solveFromBoolean(b: Boolean) : List[Map[String, SemanticVal]] = {
+    if (b) { List(Map()) } else { List() }
+  }
 
   def isAlias(l1: Local, l2: Local, stmt1: Stmt, stmt2: Stmt, m: SootMethod): Boolean = {
     if (!aliasAnalysisMap.contains(m)) {
@@ -44,6 +51,7 @@ object Constraint {
           }
         }
       }
+      case _ => throw new NotImplementedError()
     }
   }
 
@@ -57,6 +65,17 @@ object Constraint {
     def solve(): List[Map[String, SemanticVal]] = {
       e match {
         case VarExpr(binder) => List(Map((binder, SemanticVal.SootValue(v, ctx))))
+        case LitExpr(l) => {
+          (l, v) match {
+            case (IntLit(i), c:IntConstant) => {
+              solveFromBoolean(i == c.value)
+            }
+            case (BoolLit(b), c:IntConstant) => {
+              if (b) { solveFromBoolean(c.value == 1) } else { solveFromBoolean(c.value == 0) }
+            }
+            case _ => solveFromBoolean(false)
+          }
+        }
         case _ => throw new NotImplementedError()
       }
     }
@@ -83,13 +102,13 @@ object Constraint {
   }
   final case class True() extends Constraint {
     def solve(): List[Map[String, SemanticVal]] = {
-      List(Map())
+      solveFromBoolean(true)
     }
   }
 
   final case class False() extends Constraint {
     def solve(): List[Map[String, SemanticVal]] = {
-      List()
+      solveFromBoolean(false)
     }
   }
 
