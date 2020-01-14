@@ -1,5 +1,5 @@
 package org.uwplse.liquid.spec
-import org.uwplse.liquid.spec.Expr.{IdExpr, LitExpr}
+import org.uwplse.liquid.spec.Expr.{VarExpr, LitExpr}
 import org.uwplse.liquid.spec.IdentifierPattern.{NamedWildcard, StringIdentifier}
 import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, StringLit}
 import org.uwplse.liquid.spec.PatternDecl.MethodSignature
@@ -28,7 +28,7 @@ class SpecParser extends RegexParsers {
     "_r%s".format(counter)
   }
 
-  def word: Parser[String]      = """[a-zA-Z]+""".r    ^^ { _.toString }
+  def name: Parser[String]      = """[a-zA-Z]+""".r    ^^ { _.toString }
   def stringId: Parser[String]      = """[<>a-zA-Z\\.]+""".r    ^^ { _.toString }
   def stringLit: Parser[String] = """(\\.|[^"\\])*""".r    ^^ { _.toString }
   def underscore: Parser[Token] = "_"                  ^^ (_ => UNDERSCORE)
@@ -41,10 +41,10 @@ class SpecParser extends RegexParsers {
   def dot:        Parser[Token] = "."                  ^^ (_ => DOT)
   def comma:        Parser[Token] = """, *""".r        ^^ (_ => COMMA)
   def number: Parser[Int]       = """(0|[1-9]\d*)""".r ^^ { _.toInt }
-  def anyArgs: Parser[String] = """\.\.\.""".r         ^^ { _.toString }
+  def dots: Parser[String] = """\.\.\.""".r         ^^ { _.toString }
 
   def pId: Parser[IdentifierPattern] = {
-    val namedWildcard = underscore ~ word ^^ {
+    val namedWildcard = underscore ~ name ^^ {
       case _ ~ wd => {
         names.add(wd)
         NamedWildcard(wd)
@@ -59,7 +59,7 @@ class SpecParser extends RegexParsers {
     namedWildcard | wildcard | idString
   }
   def pDecl: Parser[PatternDecl] = {
-    val methodSig = """methodSig""".r ~ word ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
+    val methodSig = """methodSig""".r ~ name ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
       case _ ~ name ~ _ ~ classId ~ _ ~ methodId ~ _ => MethodSignature(name, classId, methodId)
     }
     methodSig
@@ -72,16 +72,16 @@ class SpecParser extends RegexParsers {
     stringLiteral | intLit | trueLit | falseLit
   }
   def pExpr: Parser[Expr] = {
-    val pIdExpr = pId ^^ (l => IdExpr(l))
+    val pVarExpr = name ^^ (l => VarExpr(l))
     val pLitExpr = pLiteral ^^ (l => LitExpr(l))
-    pLitExpr | pIdExpr
+    pLitExpr | pVarExpr
   }
   def pStmt: Parser[StatementSpec] =
-    word ~ leftParen ~ anyArgs ~ (comma ~ pExpr).* ~ rightParen ~ semiColon ^^ {
+    name ~ leftParen ~ dots ~ (comma ~ pExpr).* ~ rightParen ~ semiColon ^^ {
       case name ~ _ ~ _ ~ args ~ _ ~ _ => Invoke(name, args.map(_._2))
     }
   def pMethodSpec: Parser[MethodSpec] = {
-    pId ~ pId ~ leftParen ~ anyArgs ~ rightParen ~ leftCurlyBrace ~ pStmt.* ~ rightCurlyBrace ^^ {
+    pId ~ pId ~ leftParen ~ dots ~ rightParen ~ leftCurlyBrace ~ pStmt.* ~ rightCurlyBrace ^^ {
       case retId ~ name ~ _ ~ _ ~ _ ~ _ ~ stmts ~ _ => MethodSpec(retId, name, stmts)
     }
   }
