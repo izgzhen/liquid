@@ -76,9 +76,9 @@ class SpecParser extends RegexParsers {
     val pLitExpr = pLiteral ^^ (l => LitExpr(l))
     pLitExpr | pVarExpr
   }
-  def pArgs: Parser[List[Expr]] = {
-    val pAnyArgs = dots ^^ { _ => List() }
-    val pSomeArgs = pExpr ~ (comma ~ pExpr).* ^^ { case e1 ~ es => List(e1) ++ es.map(_._2) }
+  def pArgs: Parser[Arguments] = {
+    val pAnyArgs = dots ^^ { _ => Arguments.Contain(Set()) }
+    val pSomeArgs = pExpr ~ (comma ~ pExpr).* ^^ { case e1 ~ es => Arguments.Are(List(e1) ++ es.map(_._2)) }
     pAnyArgs | pSomeArgs
   }
   def pStmt: Parser[StatementSpec] =

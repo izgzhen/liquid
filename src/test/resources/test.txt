@@ -2,9 +2,10 @@ methodSig initFileReader(java.io.FileReader, <init>)
 methodSig deleteFile(java.io.File, delete)
 
 class _Test {
-    File f;
+    java.io.File f;
+    java.io.FileReader r;
     _ret _main(...) {
-        initFileReader(f);
+        initFileReader(r, f);
         deleteFile(f);
     }
 }

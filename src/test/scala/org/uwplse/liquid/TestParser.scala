@@ -2,6 +2,7 @@ package org.uwplse.liquid
 import junit.framework.TestCase
 import org.junit.Assert._
 import org.junit.Test
+import org.uwplse.liquid.spec.Arguments
 import org.uwplse.liquid.spec.Expr.LitExpr
 import org.uwplse.liquid.spec.IdentifierPattern._
 import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, StringLit}
@@ -33,19 +34,19 @@ class TestParser extends TestCase {
 
   @Test def testParseStmt(): Unit = {
     val parser = new SpecParser()
-    assertEquals(Invoke("exec", List()),  parser.parse(parser.pStmt, """exec(...);""").get)
-    assertEquals(Invoke("setIntentData", List(LitExpr(StringLit("market://details?id=com.great.animalpop")))),
+    assertEquals(Invoke("exec", Arguments.Contain(Set())),  parser.parse(parser.pStmt, """exec(...);""").get)
+    assertEquals(Invoke("setIntentData", Arguments.Are(List(LitExpr(StringLit("market://details?id=com.great.animalpop"))))),
       parser.parse(parser.pStmt, """setIntentData("market://details?id=com.great.animalpop");""").get)
   }
 
   @Test def testParseMethod(): Unit = {
     val parser = new SpecParser()
-    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), List(Invoke("exec", List()))),
+    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), List(Invoke("exec", Arguments.Contain(Set())))),
       parser.parse(parser.pMethodSpec,
         """_ _f(...) {
           |  exec(...);
           |}""".stripMargin).get)
-    assertEquals(MethodSpec(NamedWildcard("ret"),StringIdentifier("onClick"),List()),
+    assertEquals(MethodSpec(NamedWildcard("ret"),StringIdentifier("onClick"), List()),
       parser.parse(parser.pMethodSpec,
         """_ret onClick(...) {
           |}""".stripMargin).get)
@@ -64,8 +65,8 @@ class TestParser extends TestCase {
     val parser = new SpecParser()
     assertEquals(ClassSpec(NamedWildcard("H"), None, List(),
       List(MethodSpec(NamedWildcard("_r1"), NamedWildcard("f"), List(
-        Invoke("exec", List()),
-        Invoke("setIntentPackage", List(LitExpr(StringLit("com.android.vending")))))))),
+        Invoke("exec", Arguments.Contain(Set())),
+        Invoke("setIntentPackage", Arguments.Are(List(LitExpr(StringLit("com.android.vending"))))))))),
       parser.parse(parser.pClassSpec,
         """class _H {
           |  _ _f(...) {

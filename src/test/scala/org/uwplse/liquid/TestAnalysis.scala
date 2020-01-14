@@ -13,8 +13,6 @@ class TestAnalysis extends TestCase {
     soot.Scene.v.loadNecessaryClasses()
     Scene.v.loadClassAndSupport("Test")
     val testClass = Scene.v().getSootClass("Test")
-    testClass.getMethodByName("main").retrieveActiveBody()
-    assert(testClass.getMethodByName("main").hasActiveBody)
     val classes = List(testClass)
     val config = new Config()
     val ret = runOnce(config, "src/test/resources/test.txt", None, classes)

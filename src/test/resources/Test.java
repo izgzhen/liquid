@@ -8,4 +8,10 @@ class Test {
         fileReader.close();
         f.delete();
     }
+
+    void main2(File f1, File f2) throws IOException {
+        FileReader fileReader = new FileReader(f1);
+        fileReader.close();
+        f2.delete();
+    }
 }

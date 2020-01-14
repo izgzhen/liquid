@@ -5,7 +5,7 @@ import java.nio.file.{FileSystems, Path, StandardWatchEventKinds}
 
 import com.semantic_graph.JsonUtil
 import org.uwplse.liquid.SootInputMode.{Android, Java}
-import org.uwplse.liquid.spec.{Constraint, SpecParser}
+import org.uwplse.liquid.spec.{Constraint, SemanticVal, SpecParser}
 import soot.options.Options
 
 import scala.io.Source
@@ -65,7 +65,9 @@ object Analyze {
     }))
 
     // soot.PackManager.v.runPacks()
-    val ret = matchedClasses.solve()
+    val ret = matchedClasses.solve().map(m => m.filter(_._2.isInstanceOf[SemanticVal.Name]).map(p => {
+      (p._1, p._2.asInstanceOf[SemanticVal.Name].name)
+    }))
 
     if (outPath.isDefined) {
       println("Serializing results...")
