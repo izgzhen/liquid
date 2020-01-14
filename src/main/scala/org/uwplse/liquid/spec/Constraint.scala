@@ -3,9 +3,12 @@ package org.uwplse.liquid.spec
 import org.uwplse.liquid.spec.Expr.{LitExpr, VarExpr}
 import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit}
 import soot.{Local, SootMethod, Value}
-import soot.jimple.{IntConstant, Stmt}
+import soot.jimple.{IntConstant, InvokeStmt, Stmt}
 import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis
 import soot.toolkits.graph.CompleteUnitGraph
+import soot.toolkits.scalar.{SimpleLiveLocals, SmartLocalDefs}
+
+import scala.jdk.CollectionConverters._
 
 sealed abstract class SemanticVal extends Product with Serializable
 
@@ -23,11 +26,20 @@ sealed abstract class Constraint extends Product with Serializable {
 object Constraint {
 
   val aliasAnalysisMap: scala.collection.mutable.Map[SootMethod, LocalMustAliasAnalysis] = scala.collection.mutable.Map()
+  val localDefsMap: scala.collection.mutable.Map[SootMethod, SmartLocalDefs] = scala.collection.mutable.Map()
 
   // TODO: reason about this (https://github.com/izgzhen/liquid/issues/8)
   //   compute "and" with an empty list of constraint results in an empty list
   def solveFromBoolean(b: Boolean) : List[Map[String, SemanticVal]] = {
     if (b) { List(Map()) } else { List() }
+  }
+
+  def getLocalDefs(m: SootMethod) : SmartLocalDefs = {
+    if (!localDefsMap.contains(m)) {
+      val ug = new CompleteUnitGraph(m.getActiveBody)
+      localDefsMap.addOne(m, new SmartLocalDefs(ug, new SimpleLiveLocals(ug)))
+    }
+    localDefsMap(m)
   }
 
   def isAlias(l1: Local, l2: Local, stmt1: Stmt, stmt2: Stmt, m: SootMethod): Boolean = {
@@ -61,6 +73,10 @@ object Constraint {
     }
   }
 
+  def booleanEqualsInt(b: Boolean, i: Int) : Boolean = {
+    if (b) { i == 1 } else { i == 0 }
+  }
+
   final case class ExprEquals(e: Expr, v: Value, ctx: SootValueContext) extends Constraint {
     def solve(): List[Map[String, SemanticVal]] = {
       e match {
@@ -71,7 +87,26 @@ object Constraint {
               solveFromBoolean(i == c.value)
             }
             case (BoolLit(b), c:IntConstant) => {
-              if (b) { solveFromBoolean(c.value == 1) } else { solveFromBoolean(c.value == 0) }
+              solveFromBoolean(booleanEqualsInt(b, c.value))
+            }
+            case (BoolLit(b), l:Local) => {
+              val localDefs = getLocalDefs(ctx.methodEnv.sootMethod)
+              val defs = localDefs.getDefsOfAt(l, ctx.stmt).asScala
+              val constants = defs.map(i => {
+                val stmt = i.asInstanceOf[Stmt]
+                if (stmt.containsInvokeExpr() &&
+                  stmt.getInvokeExpr.getMethod.getSignature == "<java.lang.Boolean: java.lang.Boolean valueOf(boolean)>") {
+                  val intConstant = stmt.getInvokeExpr.getArg(0).asInstanceOf[IntConstant]
+                  Some(booleanEqualsInt(b, intConstant.value))
+                } else {
+                  None
+                }
+              })
+              if (constants.forall(_.isDefined)) {
+                solveFromBoolean(constants.forall(_.get))
+              } else {
+                solveFromBoolean(false)
+              }
             }
             case _ => solveFromBoolean(false)
           }
