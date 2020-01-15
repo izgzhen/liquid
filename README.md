@@ -36,3 +36,5 @@ Note that `_r1` corresponds to the nameless wildcard at the return type position
 of `_f`.
 
 Liquid is built using Soot static analysis framework.
+
+This is used in an internal research project, and more details will be published in future.
