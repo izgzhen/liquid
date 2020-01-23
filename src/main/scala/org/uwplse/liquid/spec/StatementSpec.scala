@@ -1,6 +1,6 @@
 package org.uwplse.liquid.spec
 
-import org.uwplse.liquid.spec.Constraint.False
+import org.uwplse.liquid.spec.Utils._
 import soot.jimple.{InstanceInvokeExpr, Stmt}
 
 import scala.jdk.CollectionConverters._
@@ -13,30 +13,32 @@ object Arguments {
 }
 
 sealed abstract class StatementSpec extends Product with Serializable {
-  def matches(appSpec: AppSpec, classSpec: ClassSpec, methodEnv: MethodEnv, stmt: Stmt) : Constraint
+  def matches(appSpec: AppSpec, classSpec: ClassSpec, methodEnv: MethodEnv, stmt: Stmt) : OptBinding
 }
 
 object StatementSpec {
   final case class Invoke(name: String, args: Arguments) extends StatementSpec {
-    def matches(appSpec: AppSpec, classSpec: ClassSpec, methodEnv: MethodEnv, stmt: Stmt) : Constraint = {
+    def matches(appSpec: AppSpec, classSpec: ClassSpec, methodEnv: MethodEnv, stmt: Stmt) : OptBinding = {
       val methodSig = appSpec.findMethodSignature(name).get
       if (stmt.containsInvokeExpr()) {
         val argsToMatch = stmt.getInvokeExpr match {
           case i:InstanceInvokeExpr => List(i.getBase) ++ i.getArgs.asScala
           case i => i.getArgs.asScala
         }
-        val argsConstraints = args match {
-          case Arguments.Contain(_) => Constraint.True()
+        val argsOptBinding: OptBinding = args match {
+          case Arguments.Contain(_) => optBinding(true)
           case Arguments.Are(args) =>
             if (args.size == argsToMatch.size) {
-              Constraint.foldAnd(args.zipWithIndex.map { case (arg, i) => arg.matches(argsToMatch(i), SootValueContext(stmt, methodEnv))})
+              args.zip(argsToMatch).map({ case (arg, argMatch) =>
+                arg.matches(argMatch, SootValueContext(stmt, methodEnv))}).fold(optBinding(true))(mergeOptBinding)
             } else {
-              Constraint.False()
+              None
             }
         }
-        methodSig.matches(stmt.getInvokeExpr.getMethod) && argsConstraints
+        val sigMatch = methodSig.matches(stmt.getInvokeExpr.getMethod)
+        mergeOptBinding(sigMatch, argsOptBinding)
       } else {
-        False()
+        optBinding(false)
       }
     }
   }

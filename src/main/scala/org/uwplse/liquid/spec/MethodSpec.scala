@@ -1,6 +1,6 @@
 package org.uwplse.liquid.spec
 
-import org.uwplse.liquid.spec.Constraint.False
+import org.uwplse.liquid.spec.Utils.OptBindings
 import soot.SootMethod
 import soot.jimple.Stmt
 
@@ -17,17 +17,27 @@ case class MethodEnv(methodSpec: MethodSpec, sootMethod: SootMethod)
  */
 case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
                       locals: Map[String, String], statements: List[StatementSpec]) {
-  def matches(appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod): Constraint = {
+  def matches(appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod): OptBindings = {
     try {
       m.retrieveActiveBody()
     } catch {
-      case _:RuntimeException => return False()
+      case _: RuntimeException => return Utils.optBindings(false)
     }
-    val c1 = name.matches(m.getName) && ret.matches(m.getReturnType.toString)
     val env = MethodEnv(this, m)
-    // TODO: improve the matching logic here
-    val matchedStmts = Constraint.foldAnd(statements.map(stmtSpec =>
-      Constraint.foldOr(m.getActiveBody.getUnits.asScala.map(unit => stmtSpec.matches(appSpec, classSpec, env, unit.asInstanceOf[Stmt])))))
-    c1 && matchedStmts
+    // TODO: args spec
+    name.matches(m.getName) match {
+      case Some(nameBinding) =>
+        ret.matches(m.getReturnType.toString) match {
+          case Some(retBinding) =>
+            val bs = Utils.choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
+              chosen.zip(statements).map({ case (s, spec) =>
+                spec.matches(appSpec, classSpec, env, s.asInstanceOf[Stmt])
+              }).fold(Utils.optBinding(true))(Utils.mergeOptBinding)
+            }).toList
+            Some(Utils.extend(Utils.extend(bs, nameBinding), retBinding))
+          case None => None
+        }
+      case None => None
+    }
   }
 }

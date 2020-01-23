@@ -5,8 +5,13 @@ import java.nio.file.{FileSystems, Path, StandardWatchEventKinds}
 
 import com.semantic_graph.JsonUtil
 import org.uwplse.liquid.SootInputMode.{Android, Java}
-import org.uwplse.liquid.spec.{Constraint, SemanticVal, SpecParser}
+import org.uwplse.liquid.spec.{SemanticVal, SpecParser}
 import soot.options.Options
+import java.util.Collections
+
+import org.uwplse.liquid.spec.Utils._
+import soot.{Scene, SootClass, SootMethod}
+import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
 
 import scala.io.Source
 import scala.jdk.CollectionConverters._
@@ -18,11 +23,8 @@ object SootInputMode {
   final case class Java(classPath: String) extends SootInputMode
 }
 
-object Analyze {
 
-  import java.util.Collections
-  import soot.{Scene, SootClass, SootMethod}
-  import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
+object Analyze {
 
   private def setEntrypoints(): List[SootClass] = {
     var allMethods = List[SootMethod]()
@@ -51,23 +53,24 @@ object Analyze {
     allClasses
   }
 
+
   def runOnce(config: Config, specPath: String, outPath: Option[String], classes: List[SootClass]) : List[Map[String, String]] = {
     val text = Source.fromFile(specPath)
     val specParser = new SpecParser()
-    val spec = specParser.parse(specParser.pAppSpec, text.mkString).get
+    val appSpec = specParser.parse(specParser.pAppSpec, text.mkString).get
     text.close()
 
-    val matchedClasses = Constraint.foldAnd(spec.classes.map(classSpec => {
-      Constraint.foldOr(classes.zipWithIndex.map { case (cls, i) =>
-        println("Processing class " + i + "/" + classes.size + ": " + cls.getName)
-        classSpec.matches(config, spec, cls)
-      })
+    val matchedAll : Bindings = choose(classes, appSpec.classes.size).flatMap(chosen => {
+      chosen.zip(appSpec.classes).map({ case (c, spec) =>
+        spec.matches(config, appSpec, c)
+      }).fold(optBindings(true))(mergeOptBindings)
+    }).toList.flatten
+
+    val ret = matchedAll.map(m => m.filter(_._2.isInstanceOf[SemanticVal.Name]).map(p => {
+      (p._1, p._2.asInstanceOf[SemanticVal.Name].name)
     }))
 
     // soot.PackManager.v.runPacks()
-    val ret = matchedClasses.solve().map(m => m.filter(_._2.isInstanceOf[SemanticVal.Name]).map(p => {
-      (p._1, p._2.asInstanceOf[SemanticVal.Name].name)
-    }))
 
     if (outPath.isDefined) {
       println("Serializing results...")
