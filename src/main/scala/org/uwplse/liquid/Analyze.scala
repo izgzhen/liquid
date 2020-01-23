@@ -1,6 +1,6 @@
 package org.uwplse.liquid
 
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io.{BufferedWriter, FileWriter}
 import java.nio.file.{FileSystems, Path, StandardWatchEventKinds}
 
 import com.semantic_graph.JsonUtil
@@ -102,17 +102,6 @@ object Analyze {
   }
 
   def run(config: Config, apkPath: String, specPath: String, outPath: String) : Unit = {
-    if (config.batch) {
-      val apkDir = new File(apkPath)
-      for (apk <- apkDir.listFiles.filter(_.getName.endsWith(".apk"))) {
-        runSingleAPK(config, apk.getAbsolutePath, specPath, outPath + "/" + apk.getName + ".json")
-      }
-    } else {
-      runSingleAPK(config, apkPath, specPath, outPath)
-    }
-  }
-
-  def runSingleAPK(config: Config, apkPath: String, specPath: String, outPath: String) : Unit = {
     soot.G.reset()
     setSootOptions(Android(apkPath))
     soot.Scene.v.loadNecessaryClasses()
@@ -120,12 +109,9 @@ object Analyze {
     val classes = setEntrypoints()
 
     if (!config.interactive) {
-      // normal mode: run once
       runOnce(config, specPath, Some(outPath), classes)
       return
     }
-
-    // interactive mode: trigger re-run once the spec is changed
     val path = FileSystems.getDefault.getPath(specPath)
     val watchedDir = path.getParent
     println("Watching directory " + watchedDir)

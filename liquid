@@ -6,8 +6,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 apk=$(realpath $1)
 spec=$(realpath $2)
 out=$(realpath $3)
-mode=$4
+interactive=$4
 cd $DIR
 
 make jar
-java -jar target/scala-2.13/liquid-assembly-0.1.jar --apk $apk --spec $spec --out $out $mode
+java -jar target/scala-2.13/liquid-assembly-0.1.jar --apk $apk --spec $spec --out $out $interactive
