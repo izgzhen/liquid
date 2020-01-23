@@ -20,6 +20,8 @@ jobs:
       with:
         path: "~/.sbt"
         key: ${{ runner.os }}-node-${{ hashFiles('**/build.sbt') }}
+    - name: Init local deps
+      run: make init
     - name: Build test dependencies
       run: make test
     - name: Run unit tests

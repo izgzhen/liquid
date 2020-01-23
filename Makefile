@@ -13,3 +13,6 @@ $(JAR): $(SRC_FILES)
 	sbt assembly
 
 jar: $(JAR)
+
+init:
+	cd lib; bash install.sh
