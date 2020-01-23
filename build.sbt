@@ -11,5 +11,9 @@ libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" 
 libraryDependencies += "junit" % "junit" % "4.8.1" % "test"
 libraryDependencies += "org.yaml" % "snakeyaml" % "1.25"
 
+assemblyMergeStrategy in assembly := {
+ case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+ case x => MergeStrategy.first
+}
 
 mainClass := Some("org.uwplse.liquid.Main")

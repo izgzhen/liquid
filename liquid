@@ -9,4 +9,5 @@ out=$(realpath $3)
 mode=$4
 cd $DIR
 
-sbt "run --apk $apk --spec $spec --out $out $mode"
+make jar
+java -jar target/scala-2.13/liquid-assembly-0.1.jar --apk $apk --spec $spec --out $out $mode
