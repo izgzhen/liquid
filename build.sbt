@@ -16,4 +16,6 @@ assemblyMergeStrategy in assembly := {
  case x => MergeStrategy.first
 }
 
+test in assembly := {}
+
 mainClass := Some("org.uwplse.liquid.Main")
