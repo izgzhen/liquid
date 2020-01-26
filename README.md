@@ -39,4 +39,10 @@ Liquid is built using Soot static analysis framework.
 
 This is used in an internal research project, and more details will be published in future.
 
+## Toolkit
+
+https://github.com/izgzhen/liquid-toolkit
+
+## Contributions & Research
+
 **Call for collaborators**: If you are interested in using/improving it for your own business, you should join us as a collaborator!
