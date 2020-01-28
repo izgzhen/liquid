@@ -1,0 +1,32 @@
+====== Method <Test: void main3()> =======
+    void main3()
+    {
+        Test r0;
+        byte b0;
+        java.io.PrintStream $r1;
+
+        r0 := @this: Test;
+
+        b0 = 1;
+
+        $r1 = <java.lang.System: java.io.PrintStream out>;
+
+        virtualinvoke $r1.<java.io.PrintStream: void println(int)>(b0);
+
+        return;
+    }
+
+
+		TreeSet(1)
+	Unit: b0 = 1
+		TreeSet(b0)
+
+		TreeSet(b0)
+	Unit: $r1 = <java.lang.System: java.io.PrintStream out>
+		TreeSet($r1, b0)
+
+		TreeSet($r1, b0)
+	Unit: virtualinvoke $r1.<java.io.PrintStream: void println(int)>(b0)
+		TreeSet($r1, b0)
+
+

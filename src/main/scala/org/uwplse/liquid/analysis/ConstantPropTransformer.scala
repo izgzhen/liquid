@@ -12,12 +12,12 @@ import soot.toolkits.scalar.Pair
 import scala.jdk.CollectionConverters._
 
 class ConstantPropTransformer(val config: Config) extends SceneTransformer {
-  private var solver: IFDSSolver[soot.Unit, Pair[Value, Set[Abstraction]], SootMethod, InterproceduralCFG[soot.Unit, SootMethod]] = _
+  private var solver: IFDSSolver[soot.Unit, Pair[Value, Set[ConstVal]], SootMethod, InterproceduralCFG[soot.Unit, SootMethod]] = _
 
   override protected def internalTransform(phaseName: String, map: java.util.Map[String, String]): Unit = {
-    val icfg: JimpleBasedInterproceduralCFG = new JimpleBasedInterproceduralCFG
+    val icfg = new JimpleBasedInterproceduralCFG()
     val analysis = new ConstantProp(icfg)
-    solver = new IFDSSolver[soot.Unit, Pair[Value, Set[Abstraction]], SootMethod, InterproceduralCFG[soot.Unit, SootMethod]](analysis)
+    solver = new IFDSSolver[soot.Unit, Pair[Value, Set[ConstVal]], SootMethod, InterproceduralCFG[soot.Unit, SootMethod]](analysis)
     println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Starting solver")
     solver.solve()
     println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Done")
@@ -36,7 +36,7 @@ class ConstantPropTransformer(val config: Config) extends SceneTransformer {
               }
             }
           }
-          if ((abstractions.isDefined && abstractions.get.nonEmpty) || (abstractionsAfter.isDefined && abstractionsAfter.nonEmpty)) printWriter.println("\tUnit: " + unit)
+          if ((abstractions.isDefined && abstractions.get.nonEmpty) || (abstractionsAfter.isDefined && abstractionsAfter.get.nonEmpty)) printWriter.println("\tUnit: " + unit)
           if (abstractionsAfter.isDefined) {
             for (value <- abstractionsAfter.get) {
               for (abstraction <- value._2) {
@@ -54,5 +54,5 @@ class ConstantPropTransformer(val config: Config) extends SceneTransformer {
     }
   }
 
-  def getSolver: IFDSSolver[soot.Unit, Pair[Value, Set[Abstraction]], SootMethod, InterproceduralCFG[soot.Unit, SootMethod]] = solver
+  def getSolver: IFDSSolver[soot.Unit, Pair[Value, Set[ConstVal]], SootMethod, InterproceduralCFG[soot.Unit, SootMethod]] = solver
 }
