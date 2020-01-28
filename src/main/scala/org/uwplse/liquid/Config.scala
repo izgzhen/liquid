@@ -8,4 +8,5 @@ class Config {
   @BeanProperty var whitelistPackagePrefixes: java.util.List[String] = Collections.emptyList()
   var interactive: Boolean = false
   var abstractionDumpPath: Option[String] = None
+  var apkPath: String = ""
 }

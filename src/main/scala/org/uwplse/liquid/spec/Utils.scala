@@ -1,5 +1,7 @@
 package org.uwplse.liquid.spec
 
+import org.uwplse.liquid.Analysis
+
 object Utils {
   type Binding = Map[String, SemanticVal]
   type OptBinding = Option[Map[String, SemanticVal]]
@@ -32,7 +34,7 @@ object Utils {
 
   def mergeBinding(m1: Binding, m2: Binding): Option[Binding] = {
     val common = m1.keySet intersect m2.keySet
-    if (common.nonEmpty && !common.forall(k => SemanticVal.equalValue(m1(k), m2(k)))) {
+    if (common.nonEmpty && !common.forall(k => Analysis.equalValue(m1(k), m2(k)))) {
       None
     } else {
       Some(m1 ++ m2)

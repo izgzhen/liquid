@@ -15,8 +15,11 @@ class Test {
         f2.delete();
     }
 
-    void main3() {
-        int x = 1;
-        System.out.println(x);
+    void main3(String x) {
+        StringBuilder z = new StringBuilder();
+        StringBuilder y = z;
+        z.append(x);
+        y.append("y");
+        System.out.println(z);
     }
 }

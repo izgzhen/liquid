@@ -1,5 +1,6 @@
 package org.uwplse.liquid.spec
 
+import org.uwplse.liquid.Config
 import org.uwplse.liquid.spec.Utils.OptBindings
 import soot.SootMethod
 import soot.jimple.Stmt
@@ -17,7 +18,7 @@ case class MethodEnv(methodSpec: MethodSpec, sootMethod: SootMethod)
  */
 case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
                       locals: Map[String, String], statements: List[StatementSpec]) {
-  def matches(appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod): OptBindings = {
+  def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod): OptBindings = {
     try {
       m.retrieveActiveBody()
     } catch {
@@ -31,7 +32,7 @@ case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
           case Some(retBinding) =>
             val bs = Utils.choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
               chosen.zip(statements).map({ case (s, spec) =>
-                spec.matches(appSpec, classSpec, env, s.asInstanceOf[Stmt])
+                spec.matches(config, appSpec, classSpec, env, s.asInstanceOf[Stmt])
               }).fold(Utils.optBinding(true))(Utils.mergeOptBinding)
             }).toList
             Some(Utils.extend(Utils.extend(bs, nameBinding), retBinding))

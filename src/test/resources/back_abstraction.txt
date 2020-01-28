@@ -1,32 +1,60 @@
-====== Method <Test: void main3()> =======
-    void main3()
+====== Method <Test: void main3(java.lang.String)> =======
+    void main3(java.lang.String)
     {
         Test r0;
-        byte b0;
-        java.io.PrintStream $r1;
+        java.lang.String r1;
+        java.lang.StringBuilder r2, r3, $r4;
+        java.io.PrintStream $r7;
 
         r0 := @this: Test;
 
-        b0 = 1;
+        r1 := @parameter0: java.lang.String;
 
-        $r1 = <java.lang.System: java.io.PrintStream out>;
+        $r4 = new java.lang.StringBuilder;
 
-        virtualinvoke $r1.<java.io.PrintStream: void println(int)>(b0);
+        specialinvoke $r4.<java.lang.StringBuilder: void <init>()>();
+
+        r2 = $r4;
+
+        r3 = r2;
+
+        virtualinvoke r2.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>(r1);
+
+        virtualinvoke r3.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>("y");
+
+        $r7 = <java.lang.System: java.io.PrintStream out>;
+
+        virtualinvoke $r7.<java.io.PrintStream: void println(java.lang.Object)>(r2);
 
         return;
     }
 
 
-		TreeSet(1)
-	Unit: b0 = 1
-		TreeSet(b0)
 
-		TreeSet(b0)
-	Unit: $r1 = <java.lang.System: java.io.PrintStream out>
-		TreeSet($r1, b0)
 
-		TreeSet($r1, b0)
-	Unit: virtualinvoke $r1.<java.io.PrintStream: void println(int)>(b0)
-		TreeSet($r1, b0)
+		TreeSet($r4)
+	Unit: specialinvoke $r4.<java.lang.StringBuilder: void <init>()>()
+		TreeSet($r4)
+
+		TreeSet($r4, r2)
+	Unit: r2 = $r4
+		TreeSet($r4)
+
+		TreeSet($r4, r2, r3)
+	Unit: r3 = r2
+		TreeSet($r4, r2)
+
+		TreeSet($r4, r1, r2, r3)
+	Unit: virtualinvoke r2.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>(r1)
+		TreeSet($r4, r2, r3)
+
+		TreeSet("y", $r4, r1, r2, r3)
+	Unit: virtualinvoke r3.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>("y")
+		TreeSet($r4, r1, r2, r3)
+
+		TreeSet("y", $r4, r1, r2, r3)
+	Unit: $r7 = <java.lang.System: java.io.PrintStream out>
+		TreeSet("y", $r4, r1, r2, r3)
+
 
 

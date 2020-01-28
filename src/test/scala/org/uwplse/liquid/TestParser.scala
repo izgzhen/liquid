@@ -35,7 +35,7 @@ class TestParser extends TestCase {
   @Test def testParseStmt(): Unit = {
     val parser = new SpecParser()
     assertEquals(Invoke("exec", Arguments.Contain(Set())), parser.parse(parser.pStmt, """exec(...);""").get)
-    assertEquals(Invoke("exec", Arguments.Are(List(LitExpr(RegexLit("su*"))))), parser.parse(parser.pStmt, """exec(r"su*");""").get)
+    assertEquals(Invoke("exec", Arguments.Contain(Set(RegexLit("su*")))), parser.parse(parser.pStmt, """exec(..., r"su*");""").get)
     assertEquals(Invoke("setIntentData", Arguments.Are(List(LitExpr(StringLit("market://details?id=com.great.animalpop"))))),
       parser.parse(parser.pStmt, """setIntentData("market://details?id=com.great.animalpop");""").get)
   }

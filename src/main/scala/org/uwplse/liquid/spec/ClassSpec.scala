@@ -42,7 +42,7 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
           case Some(parentBinding) =>
             val bs = choose(cls.getMethods.asScala.toList, methods.size).flatMap(chosen => {
               chosen.zip(methods).map({ case (m, spec) =>
-                val matches = spec.matches(appSpec, this, m)
+                val matches = spec.matches(config, appSpec, this, m)
                 matches
               }).fold(optBindings(true))(mergeOptBindings)
             }).toList.flatten

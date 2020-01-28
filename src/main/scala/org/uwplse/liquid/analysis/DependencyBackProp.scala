@@ -12,7 +12,7 @@ import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class ConstantBackProp (val icfg: InterproceduralCFG[soot.Unit, SootMethod], val sink: Stmt)
+class DependencyBackProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod], val sink: Stmt)
   extends DefaultJimpleIFDSTabulationProblem[Value, InterproceduralCFG[soot.Unit, SootMethod]](icfg) {
   private val id = Identity.v[Value]()
   private val zero = createZeroValue()
@@ -101,7 +101,7 @@ class ConstantBackProp (val icfg: InterproceduralCFG[soot.Unit, SootMethod], val
           putUnitAbstractions(callSite, source)
           val defs = callSite.getDefBoxes
           val flow = if (!defs.isEmpty && defs.get(0).getValue.equivTo(source)) {
-            Set[Value]()
+            getUsedValues(callSite.asInstanceOf[Stmt])
           } else {
             Set[Value](source)
           }

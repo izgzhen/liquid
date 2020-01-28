@@ -6,9 +6,9 @@ import org.apache.commons.io.IOUtils
 import junit.framework.TestCase
 import org.junit.Assert._
 import org.junit.Test
-import org.uwplse.liquid.Analyze.{runOnce, setSootOptions}
+import org.uwplse.liquid.Match.runOnce
 import org.uwplse.liquid.SootInputMode.Java
-import org.uwplse.liquid.analysis.{ConstVal, ConstantBackPropTransformer, ConstantPropTransformer}
+import org.uwplse.liquid.analysis.ConstantPropTransformer
 import soot.jimple.Stmt
 import soot.{Scene, SootMethod, Transform}
 
@@ -16,7 +16,7 @@ import scala.jdk.CollectionConverters._
 
 class TestAnalysis extends TestCase {
   @Test def testBasic(): Unit = {
-    setSootOptions(Java("src/test/resources"))
+    Analysis.setSootOptions(Java("src/test/resources"))
     soot.Scene.v.loadNecessaryClasses()
     Scene.v.loadClassAndSupport("Test")
     val testClass = Scene.v().getSootClass("Test")
@@ -29,7 +29,7 @@ class TestAnalysis extends TestCase {
   }
 
   def prepareTestAnalysis(): SootMethod = {
-    setSootOptions(Java("src/test/resources"))
+    Analysis.setSootOptions(Java("src/test/resources"))
     soot.Scene.v.loadNecessaryClasses()
     Scene.v.loadClassAndSupport("Test")
     val testClass = Scene.v.getSootClass("Test")
@@ -62,15 +62,15 @@ class TestAnalysis extends TestCase {
 
   @Test def testConstantBackPropAnalysis(): Unit = {
     val method = prepareTestAnalysis()
-    val sinkStmt = method.getActiveBody.getUnits.asScala.toList(3)
-    assert(sinkStmt.toString() == "virtualinvoke $r1.<java.io.PrintStream: void println(int)>(b0)")
+    val sinkStmt = method.getActiveBody.getUnits.asScala.toList(9)
+    assert(sinkStmt.toString() == "virtualinvoke $r7.<java.io.PrintStream: void println(java.lang.Object)>(r2)", sinkStmt.toString())
 
     val config = new Config()
     val outputPath = "src/test/resources/back_abstraction.new.txt"
     config.abstractionDumpPath = Some(outputPath)
-    val transformer = new ConstantBackPropTransformer(sinkStmt.asInstanceOf[Stmt], config)
+    val transformer = new DependencyPropTransformer(sinkStmt.asInstanceOf[Stmt], config)
     testAnalysis(new Transform("wjtp.constantProp", transformer),
       "src/test/resources/back_abstraction.txt", outputPath, config)
-    assertEquals(Set(ConstVal.IntegerConstant(1)), transformer.constantValues)
+    assertEquals(1, transformer.constants.size)
   }
 }

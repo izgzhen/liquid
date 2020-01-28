@@ -23,7 +23,8 @@ object Main {
     val yaml = new Yaml(new Constructor(classOf[Config]))
     val config = yaml.load(new FileInputStream("config.yaml")).asInstanceOf[Config]
     config.interactive = interactive
+    config.apkPath = apkPath
 
-    Analyze.run(config, apkPath, specPath, outPath)
+    Match.run(config, specPath, outPath)
   }
 }
