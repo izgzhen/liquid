@@ -1,7 +1,7 @@
 package org.uwplse.liquid.spec
-import org.uwplse.liquid.spec.Expr.{VarExpr, LitExpr}
+import org.uwplse.liquid.spec.Expr.{LitExpr, VarExpr}
 import org.uwplse.liquid.spec.IdentifierPattern.{NamedWildcard, StringIdentifier}
-import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, StringLit}
+import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, RegexLit, StringLit}
 import org.uwplse.liquid.spec.PatternDecl.MethodSignature
 import org.uwplse.liquid.spec.StatementSpec.Invoke
 
@@ -69,7 +69,8 @@ class SpecParser extends RegexParsers {
     val intLit = number ^^ { i => IntLit(i) }
     val trueLit = """true""".r ^^ { _ => BoolLit(true) }
     val falseLit = """false""".r ^^ { _ => BoolLit(false) }
-    stringLiteral | intLit | trueLit | falseLit
+    val regexLit = """r""".r ~ doubleQuote ~ stringLit ~ doubleQuote ^^ { case _ ~ _ ~ r ~ _ => RegexLit(r) }
+    stringLiteral | intLit | trueLit | falseLit | regexLit
   }
   def pExpr: Parser[Expr] = {
     val pVarExpr = pName ^^ (l => VarExpr(l))

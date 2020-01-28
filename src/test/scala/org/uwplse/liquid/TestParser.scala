@@ -5,7 +5,7 @@ import org.junit.Test
 import org.uwplse.liquid.spec.Arguments
 import org.uwplse.liquid.spec.Expr.LitExpr
 import org.uwplse.liquid.spec.IdentifierPattern._
-import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, StringLit}
+import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, RegexLit, StringLit}
 import org.uwplse.liquid.spec.PatternDecl.MethodSignature
 import org.uwplse.liquid.spec.StatementSpec.Invoke
 import org.uwplse.liquid.spec.{ClassSpec, MethodSpec, SpecParser}
@@ -34,7 +34,8 @@ class TestParser extends TestCase {
 
   @Test def testParseStmt(): Unit = {
     val parser = new SpecParser()
-    assertEquals(Invoke("exec", Arguments.Contain(Set())),  parser.parse(parser.pStmt, """exec(...);""").get)
+    assertEquals(Invoke("exec", Arguments.Contain(Set())), parser.parse(parser.pStmt, """exec(...);""").get)
+    assertEquals(Invoke("exec", Arguments.Are(List(LitExpr(RegexLit("su*"))))), parser.parse(parser.pStmt, """exec(r"su*");""").get)
     assertEquals(Invoke("setIntentData", Arguments.Are(List(LitExpr(StringLit("market://details?id=com.great.animalpop"))))),
       parser.parse(parser.pStmt, """setIntentData("market://details?id=com.great.animalpop");""").get)
   }
