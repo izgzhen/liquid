@@ -12,7 +12,7 @@ JAR := target/scala-2.13/liquid-assembly-0.1.jar
 $(JAR): $(SRC_FILES)
 	sbt assembly
 
-jar: $(JAR)
+jar: test $(JAR)
 
 init:
 	cd lib; bash install.sh

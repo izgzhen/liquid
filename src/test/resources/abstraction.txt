@@ -1,0 +1,30 @@
+====== Method <Test: void main3()> =======
+    void main3()
+    {
+        Test r0;
+        byte b0;
+        java.io.PrintStream $r1;
+
+        r0 := @this: Test;
+
+        b0 = 1;
+
+        $r1 = <java.lang.System: java.io.PrintStream out>;
+
+        virtualinvoke $r1.<java.io.PrintStream: void println(int)>(b0);
+
+        return;
+    }
+
+
+
+		b0: IntegerConstant(1)
+	Unit: $r1 = <java.lang.System: java.io.PrintStream out>
+		b0: IntegerConstant(1)
+
+		b0: IntegerConstant(1)
+	Unit: virtualinvoke $r1.<java.io.PrintStream: void println(int)>(b0)
+		$r1: IntegerConstant(1)
+		b0: IntegerConstant(1)
+
+

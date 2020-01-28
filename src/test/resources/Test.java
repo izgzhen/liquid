@@ -14,4 +14,9 @@ class Test {
         fileReader.close();
         f2.delete();
     }
+
+    void main3() {
+        int x = 1;
+        System.out.println(x);
+    }
 }
