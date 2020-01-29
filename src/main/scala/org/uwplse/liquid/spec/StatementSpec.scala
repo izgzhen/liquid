@@ -28,11 +28,14 @@ object StatementSpec {
             val ctx = SootValueContext(stmt, methodEnv)
             val argsOptBinding: OptBinding = args match {
               case Arguments.Contain(litArgs) => {
-                val constantFlowIns: Set[Value] = Analysis.getConstantFlowIns(stmt, config)
-                optBinding(litArgs.forall(l => {
-                  val ret = constantFlowIns.exists(v => l.matches(v, ctx))
-                  ret
-                }))
+                if (litArgs.isEmpty) { optBinding(true) }
+                else {
+                  val constantFlowIns: Set[Value] = Analysis.getConstantFlowIns(stmt, config)
+                  optBinding(litArgs.forall(l => {
+                    val ret = constantFlowIns.exists(v => l.matches(v, ctx))
+                    ret
+                  }))
+                }
               }
               case Arguments.Are(args) =>
                 val argsToMatch = stmt.getInvokeExpr match {
