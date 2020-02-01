@@ -19,7 +19,7 @@ sealed abstract class StatementSpec extends Product with Serializable {
 }
 
 object StatementSpec {
-  final case class Invoke(name: String, args: Arguments) extends StatementSpec {
+  final case class Invoke(name: String, args: Arguments, lhsBinder: Option[String]) extends StatementSpec {
     def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec, methodEnv: MethodEnv, stmt: Stmt) : OptBinding = {
       val methodSig = appSpec.findMethodSignature(name).get
       if (stmt.containsInvokeExpr()) {

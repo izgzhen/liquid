@@ -3,7 +3,7 @@ import junit.framework.TestCase
 import org.junit.Assert._
 import org.junit.Test
 import org.uwplse.liquid.spec.Arguments
-import org.uwplse.liquid.spec.Expr.LitExpr
+import org.uwplse.liquid.spec.Expr.{LitExpr, VarExpr}
 import org.uwplse.liquid.spec.IdentifierPattern._
 import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, RegexLit, StringLit}
 import org.uwplse.liquid.spec.PatternDecl.MethodSignature
@@ -25,6 +25,10 @@ class TestParser extends TestCase {
     assertEquals(MethodSignature("exec", NamedWildcard("execClass"), StringIdentifier("exec")),
       parser.parse(parser.pDecl, """methodSig exec(_execClass, exec)""").get)
   }
+  @Test def testParseLocalVarDecl(): Unit = {
+    val parser = new SpecParser()
+    assertEquals(("arr", "byte[]"), parser.parse(parser.pLocalVarDecl, "byte[] arr;").get)
+  }
 
   @Test def testParseLiteral(): Unit = {
     val parser = new SpecParser()
@@ -34,15 +38,17 @@ class TestParser extends TestCase {
 
   @Test def testParseStmt(): Unit = {
     val parser = new SpecParser()
-    assertEquals(Invoke("exec", Arguments.Contain(Set())), parser.parse(parser.pStmt, """exec(...);""").get)
-    assertEquals(Invoke("exec", Arguments.Contain(Set(RegexLit("su*")))), parser.parse(parser.pStmt, """exec(..., r"su*");""").get)
-    assertEquals(Invoke("setIntentData", Arguments.Are(List(LitExpr(StringLit("market://details?id=com.great.animalpop"))))),
+    assertEquals(Invoke("readInputStream", Arguments.Are(List(VarExpr("fi"), VarExpr("arr"))), Some("read")),
+      parser.parse(parser.pStmt, """read = readInputStream(fi, arr);""").get)
+    assertEquals(Invoke("exec", Arguments.Contain(Set()), None), parser.parse(parser.pStmt, """exec(...);""").get)
+    assertEquals(Invoke("exec", Arguments.Contain(Set(RegexLit("su*"))), None), parser.parse(parser.pStmt, """exec(..., r"su*");""").get)
+    assertEquals(Invoke("setIntentData", Arguments.Are(List(LitExpr(StringLit("market://details?id=com.great.animalpop")))), None),
       parser.parse(parser.pStmt, """setIntentData("market://details?id=com.great.animalpop");""").get)
   }
 
   @Test def testParseMethod(): Unit = {
     val parser = new SpecParser()
-    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(Invoke("exec", Arguments.Contain(Set())))),
+    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(Invoke("exec", Arguments.Contain(Set()), None))),
       parser.parse(parser.pMethodSpec,
         """_ _f(...) {
           |  exec(...);
@@ -66,8 +72,8 @@ class TestParser extends TestCase {
     val parser = new SpecParser()
     assertEquals(ClassSpec(NamedWildcard("H"), None,
       List(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(
-        Invoke("exec", Arguments.Contain(Set())),
-        Invoke("setIntentPackage", Arguments.Are(List(LitExpr(StringLit("com.android.vending"))))))))),
+        Invoke("exec", Arguments.Contain(Set()), None),
+        Invoke("setIntentPackage", Arguments.Are(List(LitExpr(StringLit("com.android.vending")))), None))))),
       parser.parse(parser.pClassSpec,
         """class _H {
           |  _ _f(...) {

@@ -14,6 +14,7 @@ case object DOUBLEQUOTE extends Token
 case object LEFTBRACE extends Token
 case object RIGHTBRACE extends Token
 case object LEFTCURLYBRACE extends Token
+case object EQUAL extends Token
 case object RIGHTCURLYBRACE extends Token
 case object COMMA extends Token
 case object SEMICOLON extends Token
@@ -29,12 +30,16 @@ class SpecParser extends RegexParsers {
   }
 
   def pName: Parser[String]      = """[a-zA-Z]+""".r    ^^ { _.toString }
-  def pStringId: Parser[String]      = """[<>a-zA-Z\\.]+""".r    ^^ { _.toString }
+
+  // [] is used for byte[] in LocalVarDecl
+  def pStringId: Parser[String]      = """[<>\[\]a-zA-Z\\.]+""".r    ^^ { _.toString }
+
   def stringLit: Parser[String] = """(\\.|[^"\\])*""".r    ^^ { _.toString }
   def underscore: Parser[Token] = "_"                  ^^ (_ => UNDERSCORE)
   def leftParen: Parser[Token] = """\(""".r            ^^ (_ => LEFTBRACE)
   def rightParen: Parser[Token] = """\)""".r           ^^ (_ => RIGHTBRACE)
   def leftCurlyBrace: Parser[Token] = """\{""".r       ^^ (_ => LEFTCURLYBRACE)
+  def pEqual: Parser[Token] = """=""".r       ^^ (_ => EQUAL)
   def rightCurlyBrace: Parser[Token] = """}""".r       ^^ (_ => RIGHTCURLYBRACE)
   def doubleQuote: Parser[Token] = '"'                 ^^ (_ => DOUBLEQUOTE)
   def semiColon: Parser[Token] = """;""".r             ^^ (_ => SEMICOLON)
@@ -82,9 +87,14 @@ class SpecParser extends RegexParsers {
     val pSomeArgs = pExpr ~ (comma ~ pExpr).* ^^ { case e1 ~ es => Arguments.Are(List(e1) ++ es.map(_._2)) }
     pAnyArgs | pSomeArgs
   }
+  def pLhsBinder: Parser[Option[String]] = {
+    val pNone = "" ^^ { _ => None }
+    val pSome = pName ~ pEqual ^^ { case i ~ _ => Some(i) }
+    pSome | pNone
+  }
   def pStmt: Parser[StatementSpec] =
-    pName ~ leftParen ~ pArgs ~ rightParen ~ semiColon ^^ {
-      case name ~ _ ~ args ~ _ ~ _ => Invoke(name, args)
+    pLhsBinder ~ pName ~ leftParen ~ pArgs ~ rightParen ~ semiColon ^^ {
+      case lhs ~ name ~ _ ~ args ~ _ ~ _ => Invoke(name, args, lhs)
     }
   def pMethodSpec: Parser[MethodSpec] = {
     pId ~ pId ~ leftParen ~ dots ~ rightParen ~ leftCurlyBrace ~ pLocalVarDecl.* ~ pStmt.* ~ rightCurlyBrace ^^ {
@@ -100,7 +110,7 @@ class SpecParser extends RegexParsers {
   }
   def pLocalVarDecl: Parser[(String, String)] = {
     pStringId ~ pName ~ semiColon ^^ {
-      case typeId ~ varName ~ _ => (varName, typeId)
+      case typeId ~ varName ~ _ => (varName, typeId) // FIXME: this is easy to confuse
     }
   }
   def pClassSpec: Parser[ClassSpec] = {
