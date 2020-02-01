@@ -174,7 +174,7 @@ object Analysis {
       aliasAnalysisMap.addOne(m, new LocalMustAliasAnalysis(ug, false))
     }
     val analysis = aliasAnalysisMap(m)
-    analysis.mustAlias(l1, stmt1, l2, stmt2)
+    analysis.mustAlias(l1, stmt1, l2, stmt2) || getLocalDefs(m).getDefsOf(l2) == getLocalDefs(m).getDefsOf(l1)
   }
 
   def equalValue(v1: SemanticVal, v2: SemanticVal): Boolean = {
@@ -184,7 +184,7 @@ object Analysis {
           {
             (sv1, sv2) match {
               case (l1:Local, l2: Local) =>
-                isAlias(l1, l2, ctx2.stmt, ctx1.stmt, ctx1.methodEnv.sootMethod)
+                isAlias(l1, l2, ctx1.stmt, ctx2.stmt, ctx1.methodEnv.sootMethod)
               case _ => throw new NotImplementedError()
             }
           }

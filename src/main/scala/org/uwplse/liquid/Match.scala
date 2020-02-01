@@ -34,7 +34,7 @@ object Match {
     }))
 
     if (outPath.isDefined) {
-      println("Serializing results...")
+      println("Serializing " + ret.size + " results...")
       val bw = new BufferedWriter(new FileWriter(outPath.get))
       bw.write(JsonUtil.toJson(ret))
       bw.close()

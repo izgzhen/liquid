@@ -30,12 +30,12 @@ case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
       case Some(nameBinding) =>
         ret.matches(m.getReturnType.toString) match {
           case Some(retBinding) =>
-            val bs = Utils.choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
+            val bindings = Utils.choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
               chosen.zip(statements).map({ case (s, spec) =>
                 spec.matches(config, appSpec, classSpec, env, s.asInstanceOf[Stmt])
               }).fold(Utils.optBinding(true))(Utils.mergeOptBinding)
             }).toList
-            Some(Utils.extend(Utils.extend(bs, nameBinding), retBinding))
+            Some(Utils.extend(Utils.extend(bindings, nameBinding), retBinding))
           case None => None
         }
       case None => None

@@ -1,9 +1,10 @@
 package org.uwplse.liquid.spec
 
+import org.uwplse.liquid.spec.Expr.VarExpr
 import org.uwplse.liquid.{Analysis, Config}
 import org.uwplse.liquid.spec.Utils._
-import soot.Value
-import soot.jimple.{InstanceInvokeExpr, Stmt}
+import soot.{Local, Value}
+import soot.jimple.{DefinitionStmt, InstanceInvokeExpr, Stmt}
 
 import scala.jdk.CollectionConverters._
 
@@ -51,7 +52,16 @@ object StatementSpec {
                   None
                 }
             }
-            mergeOptBinding(Some(binding), argsOptBinding)
+            val retBinding = (stmt, lhsBinder) match {
+              case (defStmt:DefinitionStmt, Some(binder)) =>
+                defStmt.getLeftOp match {
+                  case l:Local => VarExpr(binder).matches(l, ctx)
+                  case _ => None
+                }
+              case (_, None) => optBinding(true)
+              case _ => optBinding(false)
+            }
+            mergeOptBinding(retBinding, mergeOptBinding(Some(binding), argsOptBinding))
           case None => None
         }
       } else {
