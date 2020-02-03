@@ -1,7 +1,7 @@
 package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.Config
-import org.uwplse.liquid.spec.Utils.OptBindings
+import org.uwplse.liquid.spec.Utils._
 import soot.SootMethod
 import soot.jimple.Stmt
 
@@ -18,7 +18,7 @@ case class MethodEnv(methodSpec: MethodSpec, sootMethod: SootMethod)
  */
 case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
                       locals: Map[String, String], statements: List[StatementSpec]) {
-  def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod): OptBindings = {
+  def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod, ctx: Binding): OptBindings = {
     try {
       m.retrieveActiveBody()
     } catch {
@@ -30,11 +30,15 @@ case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
       case Some(nameBinding) =>
         ret.matches(m.getReturnType.toString) match {
           case Some(retBinding) =>
-            val bindings = Utils.choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
-              chosen.zip(statements).map({ case (s, spec) =>
-                spec.matches(config, appSpec, classSpec, env, s.asInstanceOf[Stmt])
-              }).fold(Utils.optBinding(true))(Utils.mergeOptBinding)
-            }).toList
+            val bindings = if (statements.isEmpty) {
+              optBindings(true).get
+            } else {
+              Utils.choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
+                chosen.zip(statements).map({ case (s, spec) =>
+                  spec.matches(config, appSpec, classSpec, env, s.asInstanceOf[Stmt], ctx)
+                }).fold(Utils.optBinding(true))(Utils.mergeOptBinding)
+              }).toList
+            }
             Some(Utils.extend(Utils.extend(bindings, nameBinding), retBinding))
           case None => None
         }

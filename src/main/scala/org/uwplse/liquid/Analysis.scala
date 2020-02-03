@@ -11,6 +11,7 @@ import org.uwplse.liquid.spec.SemanticVal
 import soot.{Local, Scene, SootClass, SootMethod, Value}
 import soot.jimple.{IntConstant, Stmt, StringConstant}
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
+import soot.jimple.toolkits.callgraph.ReachableMethods
 import soot.jimple.toolkits.ide.icfg.{BackwardsInterproceduralCFG, JimpleBasedInterproceduralCFG}
 import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis
 import soot.options.Options
@@ -21,6 +22,7 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object Analysis {
+  private val reachableMethodsMap = mutable.Map[SootMethod, ReachableMethods]()
   private val aliasAnalysisMap = mutable.Map[SootMethod, LocalMustAliasAnalysis]()
   private val localDefsMap = mutable.Map[SootMethod, SmartLocalDefs]()
   private val constantsMap = mutable.Map[Stmt, Set[Value]]()
@@ -96,6 +98,16 @@ object Analysis {
       localDefsMap.addOne(m, new SmartLocalDefs(ug, new SimpleLiveLocals(ug)))
     }
     localDefsMap(m)
+  }
+
+  def isReachable(m1: SootMethod, m2: SootMethod): Boolean = {
+    if (!reachableMethodsMap.contains(m1)) {
+      val cg = soot.Scene.v.getCallGraph
+      val rm = new ReachableMethods(cg, List(m1).asJava)
+      rm.update()
+      reachableMethodsMap.addOne(m1, rm)
+    }
+    reachableMethodsMap(m1).contains(m2)
   }
 
   def dependencyPropAnalysis(sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
@@ -190,6 +202,7 @@ object Analysis {
           }
       }
       case (SemanticVal.Name(x), SemanticVal.Name(y)) => x == y
+      case (SemanticVal.Method(f1), SemanticVal.Method(f2)) => f1 == f2
       case _ => throw new NotImplementedError()
     }
   }

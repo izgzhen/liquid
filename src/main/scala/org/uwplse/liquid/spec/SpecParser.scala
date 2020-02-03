@@ -64,10 +64,10 @@ class SpecParser extends RegexParsers {
     namedWildcard | wildcard | idString
   }
   def pDecl: Parser[PatternDecl] = {
-    val methodSig = """methodSig""".r ~ pName ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
+    val pMethodSig = """methodSig""".r ~ pName ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
       case _ ~ name ~ _ ~ classId ~ _ ~ methodId ~ _ => MethodSignature(name, classId, methodId)
     }
-    methodSig
+    pMethodSig
   }
   def pLiteral: Parser[Literal] = {
     val stringLiteral = doubleQuote ~ stringLit ~ doubleQuote ^^ { case _ ~ s ~ _ => StringLit(s) }

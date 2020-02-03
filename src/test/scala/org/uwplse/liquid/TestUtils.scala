@@ -11,6 +11,31 @@ class TestUtils extends TestCase {
     assertEquals(64, choose(List(1,2,3,4), 3).toSet.size)
   }
 
+  @Test def testProd(): Unit = {
+    assertEquals(List(List(1, 3), List(1, 4), List(1, 5), List(2, 3), List(2, 4), List(2, 5)),
+      prod(List(List(1, 2), List(3, 4, 5))))
+  }
+
+  @Test def testChooseZipMerge(): Unit = {
+    // FIXME: remove duplicated code
+    assertEquals(List(Map(2 -> "2", 3 -> "3")), chooseZipMerge[Int, String, Map[Int, String]](List(1, 2, 3), List("2", "3"), (i: Int, s: String) => {
+      if (i.toString == s) { Some(Map(i -> s)) } else { None }
+    }, Some(Map()), (z1: Option[Map[Int, String]], z2: Option[Map[Int, String]]) => {
+      (z1, z2) match {
+        case (Some(l1), Some(l2)) => Some(l1 ++ l2)
+        case _ => None
+      }
+    }))
+    assertEquals(List(Map(2 -> "2", 3 -> "3")), chooseZipMerge2[Int, String, Map[Int, String]](List(1, 2, 3), List("2", "3"), (i: Int, s: String) => {
+      if (i.toString == s) { Some(Map(i -> s)) } else { None }
+    }, Some(Map()), (z1: Option[Map[Int, String]], z2: Option[Map[Int, String]]) => {
+      (z1, z2) match {
+        case (Some(l1), Some(l2)) => Some(l1 ++ l2)
+        case _ => None
+      }
+    }))
+  }
+
   @Test def testMergeOptBindings(): Unit = {
     val m0 = optBindings(true)
     val m1 = Some(List(Map("a" -> SemanticVal.Name("a"))))

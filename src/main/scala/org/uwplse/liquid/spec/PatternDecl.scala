@@ -9,7 +9,12 @@ object PatternDecl {
   final case class MethodSignature(name: String, classId: IdentifierPattern, methodId: IdentifierPattern) extends PatternDecl {
     def matches(m: SootMethod): OptBinding = {
       val className = m.getDeclaringClass.getName
-      mergeOptBinding(classId.matches(className), methodId.matches(m.getName))
+      mergeOptBinding(classId.matches(className), methodId.matches(m.getName)) match {
+        case Some(binding) => {
+          mergeBinding(binding, Map(name -> SemanticVal.Method(m)))
+        }
+        case None => None
+      }
     }
   }
 }

@@ -19,7 +19,7 @@ class TestParser extends TestCase {
       parser.parse(parser.pId, """org.apache.http.client.HttpClient""").get)
   }
 
-  @Test def testParseMethodSig(): Unit = {
+  @Test def testParsePatternDecl(): Unit = {
     val parser = new SpecParser()
     assertEquals(MethodSignature("exec", NamedWildcard("execClass"), StringIdentifier("exec")),
       parser.parse(parser.pDecl, """methodSig exec(_execClass, exec)""").get)

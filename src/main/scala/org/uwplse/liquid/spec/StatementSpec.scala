@@ -16,16 +16,17 @@ object Arguments {
 }
 
 sealed abstract class StatementSpec extends Product with Serializable {
-  def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec, methodEnv: MethodEnv, stmt: Stmt) : OptBinding
+  def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec,
+              methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : OptBinding
 }
 
 object StatementSpec {
   final case class Invoke(name: String, args: Arguments, lhsBinder: Option[String]) extends StatementSpec {
-    def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec, methodEnv: MethodEnv, stmt: Stmt) : OptBinding = {
-      val methodSig = appSpec.findMethodSignature(name).get
+    def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec,
+                methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : OptBinding = {
       if (stmt.containsInvokeExpr()) {
-        methodSig.matches(stmt.getInvokeExpr.getMethod) match {
-          case Some(binding) =>
+        val matchedMethod = ctx(name).asInstanceOf[SemanticVal.Method].m
+        if (matchedMethod == stmt.getInvokeExpr.getMethod) {
             val ctx = SootValueContext(stmt, methodEnv)
             val argsOptBinding: OptBinding = args match {
               case Arguments.Contain(litArgs) => {
@@ -61,8 +62,9 @@ object StatementSpec {
               case (_, None) => optBinding(true)
               case _ => optBinding(false)
             }
-            mergeOptBinding(retBinding, mergeOptBinding(Some(binding), argsOptBinding))
-          case None => None
+            mergeOptBinding(retBinding, argsOptBinding)
+        } else {
+          None
         }
       } else {
         optBinding(false)

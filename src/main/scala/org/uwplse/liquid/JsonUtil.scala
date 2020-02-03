@@ -1,12 +1,12 @@
 package com.semantic_graph
 
-import com.fasterxml.jackson.databind.{MapperFeature, ObjectMapper}
+import com.fasterxml.jackson.databind.{ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.module.scala.{DefaultScalaModule, ScalaObjectMapper}
 
 object JsonUtil {
   val mapper = new ObjectMapper() with ScalaObjectMapper
   mapper.registerModule(DefaultScalaModule)
-  mapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
+  mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
 
   def toJson(value: Any): String = {
     mapper.writerWithDefaultPrettyPrinter.writeValueAsString(value)

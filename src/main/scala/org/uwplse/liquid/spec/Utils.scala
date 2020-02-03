@@ -28,6 +28,37 @@ object Utils {
     }
   }
 
+  def prod[A](xss: List[List[A]]): List[List[A]] = {
+    xss match {
+      case xs::xss2 => xs.flatMap(x => prod(xss2).map(xs2 => x::xs2))
+      case _ => List(List())
+    }
+  }
+
+  def chooseZipMerge[X, Y, Z](xs: List[X], ys: List[Y], f: (X, Y) => Option[Z],
+                              zero: Option[Z], merge: (Option[Z], Option[Z]) => Option[Z]): List[Z] =
+    choose(xs, ys.size).flatMap(chosen => {
+      chosen.zip(ys).map({ case (x, y) => f(x, y) }).fold(zero)(merge)
+    }).toList
+
+  /**
+   * Faster version of [[chooseZipMerge]]
+   * @param xs
+   * @param ys
+   * @param f
+   * @param zero
+   * @param merge
+   * @tparam X
+   * @tparam Y
+   * @tparam Z
+   * @return
+   */
+  def chooseZipMerge2[X, Y, Z](xs: List[X], ys: List[Y], f: (X, Y) => Option[Z],
+                               zero: Option[Z], merge: (Option[Z], Option[Z]) => Option[Z]): List[Z] = {
+    val zs: List[List[Z]] = ys.map(y => xs.flatMap(x => f(x, y)))
+    prod(zs).flatMap(zs2 => zs2.map(z => Some(z)).fold(zero)(merge))
+  }
+
   def extend[K, V](bs: List[Map[K, V]], b: Map[K, V]) : List[Map[K, V]] = {
     bs.map(b1 => b1 ++ b)
   }
