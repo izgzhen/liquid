@@ -2,13 +2,12 @@ package org.uwplse.liquid
 import junit.framework.TestCase
 import org.junit.Assert._
 import org.junit.Test
-import org.uwplse.liquid.spec.Arguments
+import org.uwplse.liquid.spec.{Arguments, ClassSpec, ConstraintDecl, MethodSpec, SpecParser}
 import org.uwplse.liquid.spec.Expr.{LitExpr, VarExpr}
 import org.uwplse.liquid.spec.IdentifierPattern._
 import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, RegexLit, StringLit}
 import org.uwplse.liquid.spec.PatternDecl.MethodSignature
 import org.uwplse.liquid.spec.StatementSpec.Invoke
-import org.uwplse.liquid.spec.{ClassSpec, MethodSpec, SpecParser}
 
 class TestParser extends TestCase {
   @Test def testParseIdentifier(): Unit = {
@@ -66,6 +65,12 @@ class TestParser extends TestCase {
     assertEquals(None, parser.parse(parser.pParentClass, "").get)
     assertEquals(Some(StringIdentifier("android.content.Context")),
       parser.parse(parser.pParentClass, """(android.content.Context)""").get)
+  }
+
+  @Test def testParseConstraintDecl(): Unit = {
+    val parser = new SpecParser()
+    assertEquals(ConstraintDecl("reachable", List("entrypoint", "f")),
+      parser.parse(parser.pConstraintDecl, "reachable(entrypoint, f)").get)
   }
 
   @Test def testParseClass(): Unit = {

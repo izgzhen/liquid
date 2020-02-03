@@ -118,9 +118,16 @@ class SpecParser extends RegexParsers {
       case _ ~ name ~ parent ~ _ ~ methods ~ _ => ClassSpec(name, parent, methods)
     }
   }
+
+  def pConstraintDecl: Parser[ConstraintDecl] = {
+    pName ~ leftParen ~ pName ~ (comma ~ pName).* ~ rightParen ^^ {
+      case name ~ _ ~ argName0 ~ argNames ~ _ => ConstraintDecl(name, argName0::argNames.map(_._2))
+    }
+  }
+
   def pAppSpec: Parser[AppSpec] = {
-    pDecl.* ~ pClassSpec.* ^^ {
-      case patterns ~ classes => AppSpec(patterns, classes)
+    pDecl.* ~ pClassSpec.* ~ pConstraintDecl.* ^^ {
+      case patterns ~ classes ~ constraints => AppSpec(patterns, classes, constraints)
     }
   }
 }
