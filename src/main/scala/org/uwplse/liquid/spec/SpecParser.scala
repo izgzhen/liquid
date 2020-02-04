@@ -32,7 +32,7 @@ class SpecParser extends RegexParsers {
   def pName: Parser[String]      = """[a-zA-Z]+""".r    ^^ { _.toString }
 
   // [] is used for byte[] in LocalVarDecl
-  def pStringId: Parser[String]      = """[<>\[\]a-zA-Z\\.]+""".r    ^^ { _.toString }
+  def pStringId: Parser[String]      = """[<>$0-9\[\]a-zA-Z\\.]+""".r    ^^ { _.toString }
 
   def stringLit: Parser[String] = """(\\.|[^"\\])*""".r    ^^ { _.toString }
   def underscore: Parser[Token] = "_"                  ^^ (_ => UNDERSCORE)

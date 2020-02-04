@@ -1,6 +1,6 @@
 package org.uwplse.liquid.analysis
 
-import org.uwplse.liquid.Config
+import org.uwplse.liquid.{Analysis, Config}
 import org.uwplse.liquid.spec.{AppSpec, ClassSpec}
 import org.uwplse.liquid.spec.PatternDecl.MethodSignature
 import org.uwplse.liquid.spec.Utils._

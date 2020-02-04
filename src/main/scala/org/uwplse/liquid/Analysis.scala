@@ -8,9 +8,9 @@ import heros.solver.IFDSSolver
 import org.uwplse.liquid.SootInputMode.{Android, Java}
 import org.uwplse.liquid.analysis.{DependencyBackProp, DependencyForwardProp}
 import org.uwplse.liquid.spec.SemanticVal
-import soot.{Local, Scene, SootClass, SootMethod, Value}
-import soot.jimple.{IntConstant, Stmt, StringConstant}
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
+import soot.{Local, NullType, RefType, Scene, SootClass, SootMethod, Value}
+import soot.jimple.{IntConstant, InvokeStmt, Jimple, Stmt, StringConstant}
 import soot.jimple.toolkits.callgraph.ReachableMethods
 import soot.jimple.toolkits.ide.icfg.{BackwardsInterproceduralCFG, JimpleBasedInterproceduralCFG}
 import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis
@@ -23,10 +23,15 @@ import scala.jdk.CollectionConverters._
 
 object Analysis {
   private val reachableMethodsMap = mutable.Map[SootMethod, ReachableMethods]()
+  private val reachableMap = mutable.Map[SootMethod, mutable.Set[SootMethod]]()
   private val aliasAnalysisMap = mutable.Map[SootMethod, LocalMustAliasAnalysis]()
   private val localDefsMap = mutable.Map[SootMethod, SmartLocalDefs]()
   private val constantsMap = mutable.Map[Stmt, Set[Value]]()
 
+  /**
+   * https://soot-build.cs.uni-paderborn.de/public/origin/develop/soot/soot-develop/options/soot_options.htm
+   * @param mode
+   */
   def setSootOptions(mode: SootInputMode) : Unit = {
     soot.G.reset()
     mode match {
@@ -42,14 +47,14 @@ object Analysis {
         Options.v.set_src_prec(Options.src_prec_class)
         Options.v.set_keep_line_number(true)
     }
-    Options.v.set_exclude(Collections.singletonList("java.*"))
+    Options.v.set_exclude(List("java.*", "com.google.*", "android.support.*").asJava)
     Options.v.set_prepend_classpath(true)
     Options.v.set_whole_program(true)
     Options.v.set_allow_phantom_refs(true)
     Options.v.set_ignore_resolution_errors(true)
     Options.v.set_no_writeout_body_releasing(true)
     Options.v.set_output_format(Options.output_format_none)
-    Options.v.setPhaseOption("cg.spark", "on")
+    Options.v.setPhaseOption("cg.spark", "enabled:true")
     Options.v.set_no_bodies_for_excluded(true)
     Options.v.set_omit_excepting_unit_edges(true)
   }
@@ -77,8 +82,8 @@ object Analysis {
     })
 
     val entryPointCreator = new DefaultEntryPointCreator(allMethods.map(_.getSignature).asJava)
-    val dummyMain = Some(entryPointCreator.createDummyMain)
-    Scene.v.setEntryPoints(Collections.singletonList(dummyMain.get))
+    val dummyMain = entryPointCreator.createDummyMain
+    Scene.v.setEntryPoints(Collections.singletonList(dummyMain))
     allClasses
   }
 
@@ -100,6 +105,22 @@ object Analysis {
     localDefsMap(m)
   }
 
+  def reachableUpdate(currentMethod: SootMethod, entryPoint: SootMethod): Unit = {
+    val workList = mutable.Stack(currentMethod)
+    while (workList.nonEmpty) {
+      val m = workList.pop()
+      if (!reachableMap(entryPoint).contains(m)) {
+        reachableMap(entryPoint).addOne(m)
+        if (m.hasActiveBody) {
+          m.getActiveBody.getUnits.forEach {
+            case invokeStmt: InvokeStmt => workList.push(invokeStmt.getInvokeExpr.getMethod)
+            case _ =>
+          }
+        }
+      }
+    }
+  }
+
   def isReachable(m1: SootMethod, m2: SootMethod): Boolean = {
     if (!reachableMethodsMap.contains(m1)) {
       val cg = soot.Scene.v.getCallGraph
@@ -107,7 +128,14 @@ object Analysis {
       rm.update()
       reachableMethodsMap.addOne(m1, rm)
     }
-    reachableMethodsMap(m1).contains(m2)
+    if (reachableMethodsMap(m1).contains(m2)) {
+      return true
+    }
+    if (!reachableMap.contains(m1)) {
+      reachableMap.addOne(m1, mutable.Set[SootMethod]())
+      reachableUpdate(m1, m1)
+    }
+    reachableMap(m1).contains(m2)
   }
 
   def dependencyPropAnalysis(sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {

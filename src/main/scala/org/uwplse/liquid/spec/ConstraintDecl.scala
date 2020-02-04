@@ -2,8 +2,6 @@ package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.Analysis
 
-import scala.jdk.CollectionConverters._
-
 /* Created at 2/2/20 by zhen */
 /**
  *

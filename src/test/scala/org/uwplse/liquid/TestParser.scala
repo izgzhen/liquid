@@ -15,6 +15,7 @@ class TestParser extends TestCase {
     assertEquals(NamedWildcard("H"), parser.parse(parser.pId, "_H").get)
     assertEquals(StringIdentifier("exec"), parser.parse(parser.pId, """exec""").get)
     assertEquals(StringIdentifier("<init>"), parser.parse(parser.pId, """<init>""").get)
+    assertEquals(StringIdentifier("com.revlwp.wallpaper.newlp.MainActivity$16$1$3"), parser.parse(parser.pId, """com.revlwp.wallpaper.newlp.MainActivity$16$1$3""").get)
     assertEquals(StringIdentifier("org.apache.http.client.HttpClient"),
       parser.parse(parser.pId, """org.apache.http.client.HttpClient""").get)
   }
@@ -24,6 +25,7 @@ class TestParser extends TestCase {
     assertEquals(MethodSignature("exec", NamedWildcard("execClass"), StringIdentifier("exec")),
       parser.parse(parser.pDecl, """methodSig exec(_execClass, exec)""").get)
   }
+
   @Test def testParseLocalVarDecl(): Unit = {
     val parser = new SpecParser()
     assertEquals(("arr", "byte[]"), parser.parse(parser.pLocalVarDecl, "byte[] arr;").get)
