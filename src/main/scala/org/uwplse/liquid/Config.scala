@@ -9,4 +9,10 @@ class Config {
   var interactive: Boolean = false
   var abstractionDumpPath: Option[String] = None
   var apkPath: String = ""
+  var scored: Boolean = false
+
+  override def toString: String = {
+    s"""Scored: $scored
+       |Interactive: $interactive"""
+  }
 }

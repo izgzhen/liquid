@@ -1,20 +1,34 @@
 package org.uwplse.liquid.spec
 
+import info.debatty.java.stringsimilarity.NormalizedLevenshtein
+import org.snt.prex.Prex
 import soot.{Local, Value}
 import soot.jimple.{IntConstant, Stmt, StringConstant}
 import org.uwplse.liquid.Analysis.{booleanEqualsInt, getLocalDefs}
+import org.uwplse.liquid.spec.Utils._
 
 import scala.jdk.CollectionConverters._
 
 sealed abstract class Literal extends Product with Serializable {
   def matches(value: Value, valueContext: SootValueContext): Boolean
+  def matchesR(value: Value, valueContext: SootValueContext): Double = similarityFromBoolean(matches(value, valueContext))
 }
+
 object Literal {
+  private val normalizedLevenshtein = new NormalizedLevenshtein()
+
   final case class StringLit(str: String) extends Literal {
     def matches(value: Value, valueContext: SootValueContext): Boolean = {
       value match {
         case c:StringConstant => c.value == str
         case _ => false
+      }
+    }
+
+    override def matchesR(value: Value, valueContext: SootValueContext): Double = {
+      value match {
+        case c:StringConstant => normalizedLevenshtein.similarity(c.value, str)
+        case _ => 0
       }
     }
   }
@@ -52,10 +66,21 @@ object Literal {
   }
 
   final case class RegexLit(r: String) extends Literal {
+    private val prex = new Prex(r)
+
     def matches(value: Value, valueContext: SootValueContext): Boolean = {
       value match {
         case s:StringConstant => r.r.matches(s.value)
         case _ => false
+      }
+    }
+
+    override def matchesR(value: Value, valueContext: SootValueContext): Double = {
+      value match {
+        case s:StringConstant => {
+          1.0 - prex.evaluateCost(s.value, true, true)
+        }
+        case _ => 0.0
       }
     }
   }

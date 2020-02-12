@@ -22,7 +22,7 @@ case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
     try {
       m.retrieveActiveBody()
     } catch {
-      case _: RuntimeException => return Utils.optBindings(false)
+      case _: RuntimeException => return optBindings(false)
     }
     val env = MethodEnv(this, m)
     // TODO: args spec
@@ -33,16 +33,43 @@ case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
             val bindings = if (statements.isEmpty) {
               optBindings(true).get
             } else {
-              Utils.choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
+              choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
                 chosen.zip(statements).map({ case (s, spec) =>
                   spec.matches(config, appSpec, classSpec, env, s.asInstanceOf[Stmt], ctx)
-                }).fold(Utils.optBinding(true))(Utils.mergeOptBinding)
+                }).fold(optBinding(true))(mergeOptBinding)
               }).toList
             }
-            Some(Utils.extend(Utils.extend(bindings, nameBinding), retBinding))
+            Some(extend(extend(bindings, nameBinding), retBinding))
           case None => None
         }
       case None => None
+    }
+  }
+
+  def matchesR(config: Config, appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod, ctx: Binding): ScoredBindings = {
+    try {
+      m.retrieveActiveBody()
+    } catch {
+      case _: RuntimeException => return scoredBindingsFalse()
+    }
+    val env = MethodEnv(this, m)
+    // TODO: args spec
+    name.matchesR(m.getName) match {
+      case (nameBinding, nameBindingScore) =>
+        ret.matchesR(m.getReturnType.toString) match {
+          case (retBinding, retBindingScore) =>
+            val (bindings, score) = if (statements.isEmpty) {
+              scoredBindingsTrue()
+            } else {
+              choose(m.getActiveBody.getUnits.asScala.toList, statements.size).map(chosen => {
+                val (b, s) = chosen.zip(statements).map({ case (s, spec) =>
+                  spec.matchesR(config, appSpec, classSpec, env, s.asInstanceOf[Stmt], ctx)
+                }).fold(scoredBindingTrue())(mergeScoredBinding)
+                (List(b), s)
+              }).fold(scoredBindingsTrue())(extendScoredBindings)
+            }
+            (extend(extend(bindings, nameBinding), retBinding), score * retBindingScore * nameBindingScore)
+        }
     }
   }
 }
