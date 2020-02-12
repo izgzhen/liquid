@@ -9,4 +9,5 @@ class Config {
   var interactive: Boolean = false
   var abstractionDumpPath: Option[String] = None
   var apkPath: String = ""
+  val scored: Boolean = false
 }

@@ -16,5 +16,13 @@ object PatternDecl {
         case None => None
       }
     }
+
+    def matchesR(m: SootMethod): ScoredBinding = {
+      val className = m.getDeclaringClass.getName
+      mergeScoredBinding(classId.matchesR(className), methodId.matchesR(m.getName)) match {
+        case (binding, score) =>
+          (binding ++ Map(name -> SemanticVal.Method(m)), score)
+      }
+    }
   }
 }

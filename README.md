@@ -39,6 +39,12 @@ Liquid is built using Soot static analysis framework.
 
 This is used in an internal research project, and more details will be published in future.
 
+## Dependencies
+
+Besides `build.sbt`, there are also local dependencies in `lib/`.
+You should run `bash install.sh` in `lib/` to install them to your local
+maven repo first.
+
 ## Toolkit
 
 https://github.com/izgzhen/liquid-toolkit

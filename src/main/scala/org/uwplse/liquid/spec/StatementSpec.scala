@@ -18,6 +18,8 @@ object Arguments {
 sealed abstract class StatementSpec extends Product with Serializable {
   def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec,
               methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : OptBinding
+  def matchesR(config: Config, appSpec: AppSpec, classSpec: ClassSpec,
+               methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : ScoredBinding
 }
 
 object StatementSpec {
@@ -68,6 +70,56 @@ object StatementSpec {
         }
       } else {
         optBinding(false)
+      }
+    }
+
+    def matchesR(config: Config, appSpec: AppSpec, classSpec: ClassSpec,
+                 methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : ScoredBinding = {
+      if (stmt.containsInvokeExpr()) {
+        val matchedMethod = ctx(name).asInstanceOf[SemanticVal.Method].m
+        if (matchedMethod == stmt.getInvokeExpr.getMethod) {
+          val ctx = SootValueContext(stmt, methodEnv)
+          val argsOptBinding: ScoredBinding = args match {
+            case Arguments.Contain(litArgs) => {
+              if (litArgs.isEmpty) { scoredBindingTrue() }
+              else {
+                val constantFlowIns: Set[Value] = Analysis.getConstantFlowIns(stmt, config)
+                val score = litArgs.map(l => {
+                  val ret = constantFlowIns.map(v => l.matchesR(v, ctx)).max
+                  ret
+                }).fold(1.0)(scoreProd)
+                scoredBindingFrom(score)
+              }
+            }
+            case Arguments.Are(args) =>
+              val argsToMatch = stmt.getInvokeExpr match {
+                case i: InstanceInvokeExpr => List(i.getBase) ++ i.getArgs.asScala
+                case i => i.getArgs.asScala
+              }
+              if (args.size == argsToMatch.size) {
+                // TODO: finds dependencies of a specific arg as well to match with Regex case
+                args.zip(argsToMatch).map({ case (arg, argMatch) =>
+                  arg.matchesR(argMatch, ctx)
+                }).fold(scoredBindingTrue())(mergeScoredBinding)
+              } else {
+                scoredBindingFalse()
+              }
+          }
+          val retBinding = (stmt, lhsBinder) match {
+            case (defStmt:DefinitionStmt, Some(binder)) =>
+              defStmt.getLeftOp match {
+                case l:Local => VarExpr(binder).matchesR(l, ctx)
+                case _ => scoredBindingFalse()
+              }
+            case (_, None) => scoredBindingTrue()
+            case _ => scoredBindingFalse()
+          }
+          mergeScoredBinding(retBinding, argsOptBinding)
+        } else {
+          scoredBindingFalse()
+        }
+      } else {
+        scoredBindingFalse()
       }
     }
   }

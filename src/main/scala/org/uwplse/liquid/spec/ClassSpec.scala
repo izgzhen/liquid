@@ -52,4 +52,39 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
       case None => None
     }
   }
+
+  def matchesR(config: Config, appSpec: AppSpec, cls: SootClass, ctx: Binding) : ScoredBindings = {
+    val filteredOut = parent match {
+      case Some(NamedWildcard("packageNotWhitelisted")) =>
+        config.whitelistPackagePrefixes.asScala.exists(cls.getName.startsWith)
+      case _ => false
+    }
+    if (filteredOut) {
+      return scoredBindingsFalse()
+    }
+
+    name.matchesR(cls.getName) match {
+      case (nameBinding, nameBindingScore) =>
+        val (parentBinding, parentBindingScore) = if (parent.isDefined) {
+          if (cls.hasSuperclass || cls.getInterfaceCount > 0) {
+            if (cls.hasSuperclass) {
+              parent.get.matchesR(cls.getSuperclass.getName)
+            } else {
+              val matches = cls.getInterfaces.asScala.map(i => parent.get.matchesR(i.getName))
+              matches.maxBy(_._2)
+            }
+          } else {
+            scoredBindingFalse()
+          }
+        } else {
+          scoredBindingFalse()
+        }
+        val (bs, score) = choose(cls.getMethods.asScala.toList, methods.size).map(chosen => {
+          chosen.zip(methods).map({ case (m, spec) =>
+            spec.matchesR(config, appSpec, this, m, ctx)
+          }).fold(scoredBindingsTrue())(mergeScoredBindings)
+        }).fold(scoredBindingsTrue())(extendScoredBindings)
+        (extend(extend(bs, nameBinding), parentBinding), score * parentBindingScore * nameBindingScore)
+    }
+  }
 }

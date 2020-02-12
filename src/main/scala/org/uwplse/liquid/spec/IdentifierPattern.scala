@@ -4,6 +4,7 @@ import org.uwplse.liquid.spec.Utils._
 
 sealed abstract class IdentifierPattern extends Product with Serializable {
   def matches(s: String) : OptBinding
+  def matchesR(s: String) : ScoredBinding = scoreOptBinding(matches(s))
   def fromBinding(b: Binding): SemanticVal
 }
 

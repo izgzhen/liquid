@@ -10,6 +10,7 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % 
 libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.10.0"
 libraryDependencies += "junit" % "junit" % "4.8.1" % "test"
 libraryDependencies += "org.yaml" % "snakeyaml" % "1.25"
+libraryDependencies += "info.debatty" % "java-string-similarity" % "1.2.1"
 
 assemblyMergeStrategy in assembly := {
  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
