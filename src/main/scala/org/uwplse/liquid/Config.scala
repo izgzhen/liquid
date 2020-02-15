@@ -12,6 +12,7 @@ class Config {
   var scored: Boolean = false
 
   override def toString: String = {
-    s"Scored: $scored\nInteractive: $interactive"
+    s"""Scored: $scored
+       |Interactive: $interactive"""
   }
 }
