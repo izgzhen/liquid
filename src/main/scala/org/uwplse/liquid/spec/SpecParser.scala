@@ -64,7 +64,7 @@ class SpecParser extends RegexParsers {
     namedWildcard | wildcard | idString
   }
   def pDecl: Parser[PatternDecl] = {
-    val pMethodSig = """methodSig""".r ~ pName ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
+    val pMethodSig = """methodSig""".r ~ pId ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
       case _ ~ name ~ _ ~ classId ~ _ ~ methodId ~ _ => MethodSignature(name, classId, methodId)
     }
     pMethodSig
@@ -93,7 +93,7 @@ class SpecParser extends RegexParsers {
     pSome | pNone
   }
   def pStmt: Parser[StatementSpec] =
-    pLhsBinder ~ pName ~ leftParen ~ pArgs ~ rightParen ~ semiColon ^^ {
+    pLhsBinder ~ pId ~ leftParen ~ pArgs ~ rightParen ~ semiColon ^^ {
       case lhs ~ name ~ _ ~ args ~ _ ~ _ => Invoke(name, args, lhs)
     }
   def pMethodSpec: Parser[MethodSpec] = {

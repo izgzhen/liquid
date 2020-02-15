@@ -22,8 +22,8 @@ class TestParser extends TestCase {
 
   @Test def testParsePatternDecl(): Unit = {
     val parser = new SpecParser()
-    assertEquals(MethodSignature("exec", NamedWildcard("execClass"), StringIdentifier("exec")),
-      parser.parse(parser.pDecl, """methodSig exec(_execClass, exec)""").get)
+    assertEquals(MethodSignature(NamedWildcard("exec"), NamedWildcard("execClass"), StringIdentifier("exec")),
+      parser.parse(parser.pDecl, """methodSig _exec(_execClass, exec)""").get)
   }
 
   @Test def testParseLocalVarDecl(): Unit = {
@@ -39,20 +39,20 @@ class TestParser extends TestCase {
 
   @Test def testParseStmt(): Unit = {
     val parser = new SpecParser()
-    assertEquals(Invoke("readInputStream", Arguments.Are(List(VarExpr("fi"), VarExpr("arr"))), Some("read")),
-      parser.parse(parser.pStmt, """read = readInputStream(fi, arr);""").get)
-    assertEquals(Invoke("exec", Arguments.Contain(Set()), None), parser.parse(parser.pStmt, """exec(...);""").get)
-    assertEquals(Invoke("exec", Arguments.Contain(Set(RegexLit("su*"))), None), parser.parse(parser.pStmt, """exec(..., r"su*");""").get)
-    assertEquals(Invoke("setIntentData", Arguments.Are(List(LitExpr(StringLit("market://details?id=com.great.animalpop")))), None),
-      parser.parse(parser.pStmt, """setIntentData("market://details?id=com.great.animalpop");""").get)
+    assertEquals(Invoke(NamedWildcard("readInputStream"), Arguments.Are(List(VarExpr("fi"), VarExpr("arr"))), Some("read")),
+      parser.parse(parser.pStmt, """read = _readInputStream(fi, arr);""").get)
+    assertEquals(Invoke(NamedWildcard("exec"), Arguments.Contain(Set()), None), parser.parse(parser.pStmt, """_exec(...);""").get)
+    assertEquals(Invoke(NamedWildcard("exec"), Arguments.Contain(Set(RegexLit("su*"))), None), parser.parse(parser.pStmt, """_exec(..., r"su*");""").get)
+    assertEquals(Invoke(NamedWildcard("setIntentData"), Arguments.Are(List(LitExpr(StringLit("market://details?id=com.great.animalpop")))), None),
+      parser.parse(parser.pStmt, """_setIntentData("market://details?id=com.great.animalpop");""").get)
   }
 
   @Test def testParseMethod(): Unit = {
     val parser = new SpecParser()
-    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(Invoke("exec", Arguments.Contain(Set()), None))),
+    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(Invoke(NamedWildcard("exec"), Arguments.Contain(Set()), None))),
       parser.parse(parser.pMethodSpec,
         """_ _f(...) {
-          |  exec(...);
+          |  _exec(...);
           |}""".stripMargin).get)
     assertEquals(MethodSpec(NamedWildcard("ret"), StringIdentifier("onClick"), Map(), List()),
       parser.parse(parser.pMethodSpec,
@@ -79,13 +79,13 @@ class TestParser extends TestCase {
     val parser = new SpecParser()
     assertEquals(ClassSpec(NamedWildcard("H"), None,
       List(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(
-        Invoke("exec", Arguments.Contain(Set()), None),
-        Invoke("setIntentPackage", Arguments.Are(List(LitExpr(StringLit("com.android.vending")))), None))))),
+        Invoke(NamedWildcard("exec"), Arguments.Contain(Set()), None),
+        Invoke(NamedWildcard("setIntentPackage"), Arguments.Are(List(LitExpr(StringLit("com.android.vending")))), None))))),
       parser.parse(parser.pClassSpec,
         """class _H {
           |  _ _f(...) {
-          |    exec(...);
-          |    setIntentPackage("com.android.vending");
+          |    _exec(...);
+          |    _setIntentPackage("com.android.vending");
           |  }
           |}""".stripMargin).get)
 

@@ -1,6 +1,7 @@
 package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.spec.Expr.VarExpr
+import org.uwplse.liquid.spec.IdentifierPattern.NamedWildcard
 import org.uwplse.liquid.{Analysis, Config}
 import org.uwplse.liquid.spec.Utils._
 import soot.{Local, Value}
@@ -23,11 +24,12 @@ sealed abstract class StatementSpec extends Product with Serializable {
 }
 
 object StatementSpec {
-  final case class Invoke(name: String, args: Arguments, lhsBinder: Option[String]) extends StatementSpec {
+  final case class Invoke(name: IdentifierPattern, args: Arguments, lhsBinder: Option[String]) extends StatementSpec {
     def matches(config: Config, appSpec: AppSpec, classSpec: ClassSpec,
                 methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : OptBinding = {
       if (stmt.containsInvokeExpr()) {
-        val matchedMethod = ctx(name).asInstanceOf[SemanticVal.Method].m
+        val methodSymbolicName = name.asInstanceOf[NamedWildcard].binder // FIXME
+        val matchedMethod = ctx(methodSymbolicName).asInstanceOf[SemanticVal.Method].m
         if (matchedMethod == stmt.getInvokeExpr.getMethod) {
             val ctx = SootValueContext(stmt, methodEnv)
             val argsOptBinding: OptBinding = args match {
@@ -76,7 +78,8 @@ object StatementSpec {
     def matchesR(config: Config, appSpec: AppSpec, classSpec: ClassSpec,
                  methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : ScoredBinding = {
       if (stmt.containsInvokeExpr()) {
-        val matchedMethod = ctx(name).asInstanceOf[SemanticVal.Method].m
+        val methodSymbolicName = name.asInstanceOf[NamedWildcard].binder // FIXME
+        val matchedMethod = ctx(methodSymbolicName).asInstanceOf[SemanticVal.Method].m
         if (matchedMethod == stmt.getInvokeExpr.getMethod) {
           val ctx = SootValueContext(stmt, methodEnv)
           val argsOptBinding: ScoredBinding = args match {
