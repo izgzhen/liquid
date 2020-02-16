@@ -64,7 +64,7 @@ object Analysis {
     Options.v.set_omit_excepting_unit_edges(true)
   }
 
-  private def setEntrypoints(): List[SootClass] = {
+  private def setEntrypoints(): Set[SootClass] = {
     var allMethods = List[SootMethod]()
     var allClasses = List[SootClass]()
 
@@ -89,7 +89,7 @@ object Analysis {
     val entryPointCreator = new DefaultEntryPointCreator(allMethods.map(_.getSignature).asJava)
     val dummyMain = entryPointCreator.createDummyMain
     Scene.v.setEntryPoints(Collections.singletonList(dummyMain))
-    allClasses
+    allClasses.toSet
   }
 
   /**
@@ -101,12 +101,16 @@ object Analysis {
     this.config = Some(config)
     setSootOptions(config.input)
     soot.Scene.v.loadNecessaryClasses()
-    allClasses = setEntrypoints().toSet
-    allMethods = soot.Scene.v.getClasses.asScala.flatMap(_.getMethods.asScala).toSet
+    allClasses = setEntrypoints()
   }
 
   def getAllClasses: Set[SootClass] = allClasses
-  def getAllMethods: Set[SootMethod] = allMethods
+  def getAllMethods: Set[SootMethod] = {
+    if (allMethods.isEmpty) {
+      allMethods = Scene.v().getReachableMethods.listener().asScala.map(_.method).toSet
+    }
+    allMethods
+  }
 
   def debugUnitToOwner(m: java.util.HashMap[Unit, soot.Body]) : Set[String] = {
     m.asScala.values.map(_.getMethod.getDeclaringClass.getName).toSet
@@ -156,9 +160,15 @@ object Analysis {
   def dependencyPropAnalysis(sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
     val vals = mutable.Set[Value]()
     val icfg = new JimpleBasedInterproceduralCFG(false)
-    assert(icfg.getMethodOf(sink) != null)
+//    assert(icfg.getMethodOf(sink) != null, "IFDSSolver might fail") // FIXME
+    if (icfg.getMethodOf(sink) == null) {
+      return Set()
+    }
     val backIcfg = new BackwardsInterproceduralCFG(icfg)
-    assert(backIcfg.getMethodOf(sink) != null)
+//    assert(backIcfg.getMethodOf(sink) != null, "IFDSSolver might fail") // FIXME
+    if (backIcfg.getMethodOf(sink) == null) {
+      return Set()
+    }
     val backwardAnalysis = new DependencyBackProp(backIcfg, sink)
     val backwardSolver = new IFDSSolver[soot.Unit, Value, SootMethod, InterproceduralCFG[soot.Unit, SootMethod]](backwardAnalysis)
     backwardSolver.solve()

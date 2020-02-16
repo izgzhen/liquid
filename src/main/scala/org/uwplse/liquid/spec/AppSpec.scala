@@ -15,6 +15,9 @@ case class AppSpec(patterns: List[PatternDecl], classes: List[ClassSpec], specia
       val minCostRunnable = runnables.toList.minBy(_.solveCost(bindings.getKeys))
       schedule.remove(minCostRunnable)
       bindings = bindings.map(ctx => minCostRunnable.solve(this, ctx).extend(ctx)).fold(Bindings.Zero()){ case (b1, b2) => b1.sum(b2) }
+      if (bindings.isInstanceOf[Bindings.Zero]) {
+        return bindings
+      }
     }
 
     bindings

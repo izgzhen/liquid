@@ -18,6 +18,8 @@ case class ConstraintDecl(name: String, argNames: List[String]) extends Constrai
           case (SemanticVal.Method(m1), SemanticVal.Method(m2)) => {
             if (Analysis.isReachable(m1, m2)) {
               return Bindings.one()
+            } else {
+              return Bindings.Zero()
             }
           }
           case _ =>

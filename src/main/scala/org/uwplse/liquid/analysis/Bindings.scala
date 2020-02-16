@@ -43,15 +43,11 @@ object Bindings {
     override def getKeys: Set[String] = head.m.keySet
 
     override def extend(b: Binding): Bindings = {
-      head.prod(b) match {
-        case Some(value) =>
-          val extended = tail.map(_.prod(b))
-          if (extended.forall(_.isDefined)) {
-            return NonEmpty(value, extended.map(_.get))
-          }
-        case None =>
+      val extended = (head::tail).map(_.prod(b)).filter(_.isDefined).map(_.get)
+      extended match {
+        case h::t => NonEmpty(h, t)
+        case _ => Zero()
       }
-      Bindings.Zero()
     }
   }
 

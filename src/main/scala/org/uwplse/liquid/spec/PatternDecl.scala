@@ -12,9 +12,9 @@ object PatternDecl {
     def solve(appSpec: AppSpec, ctx: Binding): Bindings = {
       ctx.m.get(name) match {
         case Some(value) =>{
-          val m = value.asInstanceOf[SemanticVal.Method].m
-          if (matches(m).isDefined) {
-            Bindings.one()
+          val binding = matches(value.asInstanceOf[SemanticVal.Method].m)
+          if (binding.isDefined) {
+            Bindings.NonEmpty(binding.get, List())
           } else {
             Bindings.Zero()
           }
