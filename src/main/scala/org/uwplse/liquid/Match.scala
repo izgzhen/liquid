@@ -19,19 +19,19 @@ object SootInputMode {
 }
 
 object Match {
-  def runOnce(config: Config, specPath: String, outPath: Option[String], classes: List[SootClass]) : List[Map[String, String]] = {
+  def runOnce(config: Config, specPath: String, outPath: Option[String]) : List[Map[String, String]] = {
     val text = Source.fromFile(specPath)
     val specParser = new SpecParser()
     val appSpec = specParser.parse(specParser.pAppSpec, text.mkString).get
     text.close()
 
-    val transformer = new MatchTransformer(appSpec, classes, config)
+    val transformer = new MatchTransformer(appSpec)
     soot.PackManager.v.getPack("wjtp").add(new Transform("wjtp.match", transformer))
     soot.PackManager.v.runPacks()
 
-    val ret = transformer.matchedAll.map(m => m.filter(_._2.isInstanceOf[SemanticVal.Name]).map(p => {
+    val ret = transformer.matchedAll.map(m => m.m.filter(_._2.isInstanceOf[SemanticVal.Name]).map(p => {
       (p._1, p._2.asInstanceOf[SemanticVal.Name].name)
-    }))
+    })).toList
 
     if (outPath.isDefined) {
       println("Serializing " + ret.size + " results...")
@@ -44,10 +44,10 @@ object Match {
 
 
   def run(config: Config, specPath: String, outPath: String) : Unit = {
-    val classes = Analysis.setup(config)
+    Analysis.setup(config)
 
     if (!config.interactive) {
-      runOnce(config, specPath, Some(outPath), classes)
+      runOnce(config, specPath, Some(outPath))
       return
     }
     val path = FileSystems.getDefault.getPath(specPath)
@@ -66,7 +66,7 @@ object Match {
         if (changed.endsWith(path.getFileName)) {
           println("Running...")
           Console.flush()
-          runOnce(config, specPath, Some(outPath), classes)
+          runOnce(config, specPath, Some(outPath))
           println("Finished")
           Console.flush()
         }

@@ -16,13 +16,14 @@ import scala.jdk.CollectionConverters._
 
 class TestAnalysis extends TestCase {
   @Test def testBasic(): Unit = {
-    Analysis.setSootOptions(Java("src/test/resources"))
-    soot.Scene.v.loadNecessaryClasses()
+    val config = new Config()
+    config.input = Java("src/test/resources")
+
+    Analysis.setup(config)
     Scene.v.loadClassAndSupport("Test")
     val testClass = Scene.v().getSootClass("Test")
-    val classes = List(testClass)
-    val config = new Config()
-    val ret = runOnce(config, "src/test/resources/test.txt", None, classes)
+    assert(Analysis.getAllClasses.contains(testClass))
+    val ret = runOnce(config, "src/test/resources/test.txt", None)
     assertEquals(
       List(Map("Test" -> "Test", "main" -> "main", "ret" -> "void")),
       ret)

@@ -1,7 +1,9 @@
 package org.uwplse.liquid
 
 import java.io.FileInputStream
+
 import org.apache.commons.cli.{DefaultParser, Option, Options}
+import org.uwplse.liquid.SootInputMode.Android
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
 
@@ -25,7 +27,7 @@ object Main {
     val yaml = new Yaml(new Constructor(classOf[Config]))
     val config = yaml.load(new FileInputStream("config.yaml")).asInstanceOf[Config]
     config.interactive = interactive
-    config.apkPath = apkPath
+    config.input = Android(apkPath)
     config.scored = scored
 
     Match.run(config, specPath, outPath)

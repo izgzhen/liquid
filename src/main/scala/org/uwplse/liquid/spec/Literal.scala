@@ -11,7 +11,7 @@ import scala.jdk.CollectionConverters._
 
 sealed abstract class Literal extends Product with Serializable {
   def matches(value: Value, valueContext: SootValueContext): Boolean
-  def matchesR(value: Value, valueContext: SootValueContext): Double = similarityFromBoolean(matches(value, valueContext))
+//  def matchesR(value: Value, valueContext: SootValueContext): Double = similarityFromBoolean(matches(value, valueContext))
 }
 
 object Literal {
@@ -25,12 +25,12 @@ object Literal {
       }
     }
 
-    override def matchesR(value: Value, valueContext: SootValueContext): Double = {
-      value match {
-        case c:StringConstant => normalizedLevenshtein.similarity(c.value, str)
-        case _ => 0
-      }
-    }
+//    override def matchesR(value: Value, valueContext: SootValueContext): Double = {
+//      value match {
+//        case c:StringConstant => normalizedLevenshtein.similarity(c.value, str)
+//        case _ => 0
+//      }
+//    }
   }
 
   final case class IntLit(i: Int) extends Literal {
@@ -75,13 +75,13 @@ object Literal {
       }
     }
 
-    override def matchesR(value: Value, valueContext: SootValueContext): Double = {
-      value match {
-        case s:StringConstant => {
-          1.0 - prex.evaluateCost(s.value, true, true)
-        }
-        case _ => 0.0
-      }
-    }
+//    override def matchesR(value: Value, valueContext: SootValueContext): Double = {
+//      value match {
+//        case s:StringConstant => {
+//          1.0 - prex.evaluateCost(s.value, true, true)
+//        }
+//        case _ => 0.0
+//      }
+//    }
   }
 }

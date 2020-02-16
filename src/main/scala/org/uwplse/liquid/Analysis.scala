@@ -3,14 +3,15 @@ package org.uwplse.liquid
 import java.io.{FileNotFoundException, PrintWriter}
 import java.util.Collections
 
-import heros.InterproceduralCFG
-import heros.solver.IFDSSolver
 import org.uwplse.liquid.SootInputMode.{Android, Java}
 import org.uwplse.liquid.analysis.{DependencyBackProp, DependencyForwardProp}
 import org.uwplse.liquid.spec.SemanticVal
+
+import heros.InterproceduralCFG
+import heros.solver.IFDSSolver
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
-import soot.{Local, NullType, RefType, Scene, SootClass, SootMethod, Value}
-import soot.jimple.{IntConstant, InvokeStmt, Jimple, Stmt, StringConstant}
+import soot.{Local, Scene, SootClass, SootMethod, Value}
+import soot.jimple.{IntConstant, InvokeStmt, Stmt, StringConstant}
 import soot.jimple.toolkits.callgraph.ReachableMethods
 import soot.jimple.toolkits.ide.icfg.{BackwardsInterproceduralCFG, JimpleBasedInterproceduralCFG}
 import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis
@@ -22,11 +23,15 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object Analysis {
+  var config: Option[Config] = None
+
   private val reachableMethodsMap = mutable.Map[SootMethod, ReachableMethods]()
   private val reachableMap = mutable.Map[SootMethod, mutable.Set[SootMethod]]()
   private val aliasAnalysisMap = mutable.Map[SootMethod, LocalMustAliasAnalysis]()
   private val localDefsMap = mutable.Map[SootMethod, SmartLocalDefs]()
   private val constantsMap = mutable.Map[Stmt, Set[Value]]()
+  private var allClasses = Set[SootClass]()
+  private var allMethods = Set[SootMethod]()
 
   /**
    * https://soot-build.cs.uni-paderborn.de/public/origin/develop/soot/soot-develop/options/soot_options.htm
@@ -87,11 +92,21 @@ object Analysis {
     allClasses
   }
 
-  def setup(config: Config): List[SootClass] = {
-    setSootOptions(Android(config.apkPath))
+  /**
+   * Setup the analysis singleton
+   * @param config
+   * @return
+   */
+  def setup(config: Config): Unit = {
+    this.config = Some(config)
+    setSootOptions(config.input)
     soot.Scene.v.loadNecessaryClasses()
-    setEntrypoints()
+    allClasses = setEntrypoints().toSet
+    allMethods = soot.Scene.v.getClasses.asScala.flatMap(_.getMethods.asScala).toSet
   }
+
+  def getAllClasses: Set[SootClass] = allClasses
+  def getAllMethods: Set[SootMethod] = allMethods
 
   def debugUnitToOwner(m: java.util.HashMap[Unit, soot.Body]) : Set[String] = {
     m.asScala.values.map(_.getMethod.getDeclaringClass.getName).toSet
@@ -201,9 +216,9 @@ object Analysis {
     vals.toSet
   }
 
-  def getConstantFlowIns(sink: Stmt, config: Config): Set[Value] = {
+  def getConstantFlowIns(sink: Stmt): Set[Value] = {
     if (!constantsMap.contains(sink)) {
-      constantsMap.addOne(sink, dependencyPropAnalysis(sink, config.abstractionDumpPath))
+      constantsMap.addOne(sink, dependencyPropAnalysis(sink, getConfig.abstractionDumpPath))
     }
     constantsMap(sink)
   }
@@ -238,4 +253,6 @@ object Analysis {
   def booleanEqualsInt(b: Boolean, i: Int) : Boolean = {
     if (b) { i == 1 } else { i == 0 }
   }
+
+  def getConfig: Config = config.get
 }

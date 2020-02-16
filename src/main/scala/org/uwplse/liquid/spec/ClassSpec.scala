@@ -1,22 +1,44 @@
 package org.uwplse.liquid.spec
 
+import org.uwplse.liquid.analysis.{Binding, Bindings}
 import org.uwplse.liquid.spec.Utils._
-import org.uwplse.liquid.Config
+import org.uwplse.liquid.Analysis
 import org.uwplse.liquid.spec.IdentifierPattern.NamedWildcard
 import soot.SootClass
 
 import scala.jdk.CollectionConverters._
 
 case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
-                     methods: List[MethodSpec]) {
-  def matches(config: Config, appSpec: AppSpec, cls: SootClass, ctx: Binding) : OptBindings = {
+                     methods: List[MethodSpec]) extends Constraint {
+
+  override def solve(appSpec: AppSpec, ctx: Binding): Bindings = {
+    if (Analysis.getAllClasses.isEmpty) {
+      Bindings.one()
+    } else {
+      Analysis.getAllClasses.map(c => matches(appSpec, c, ctx)).fold(Bindings.Zero()){ case (b1, b2) => b1.sum(b2) }
+    }
+  }
+
+  override def solveCost(ctx: Set[String]): Int = {
+    name match {
+      case NamedWildcard(binder) =>
+        if (ctx.contains(binder)) {
+          methods.map(m => m.solveCost(ctx)).sum
+        } else {
+          Analysis.getAllClasses.map(c => c.getMethods.size() * methods.size).sum
+        }
+      case IdentifierPattern.StringIdentifier(_) => 1
+    }
+  }
+
+  def matches(appSpec: AppSpec, cls: SootClass, ctx: Binding) : Bindings = {
     val filteredOut = parent match {
       case Some(NamedWildcard("packageNotWhitelisted")) =>
-        config.whitelistPackagePrefixes.asScala.exists(cls.getName.startsWith)
+        Analysis.getConfig.whitelistPackagePrefixes.asScala.exists(cls.getName.startsWith)
       case _ => false
     }
     if (filteredOut) {
-      return optBindings(false)
+      return Bindings.Zero()
     }
 
     name.matches(cls.getName) match {
@@ -40,51 +62,57 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
         }
         matchedParent match {
           case Some(parentBinding) =>
-            val bs = choose(cls.getMethods.asScala.toList, methods.size).flatMap(chosen => {
-              chosen.zip(methods).map({ case (m, spec) =>
-                val matches = spec.matches(config, appSpec, this, m, ctx)
-                matches
-              }).fold(optBindings(true))(mergeOptBindings)
-            }).toList.flatten
-            Some(extend(extend(bs, nameBinding), parentBinding))
-          case _ => None
+            val bs = Bindings.from(choose(cls.getMethods.asScala.toList, methods.size).flatMap(chosen => {
+              assert(chosen.size == methods.size)
+              chosen.zip(methods).map({
+                case (m, spec) => spec.matches(appSpec, this, m, ctx)
+              }).fold(Bindings.Zero()){ case (x,y) => x.sum(y) }
+            }))
+            bs.extend(nameBinding).extend(parentBinding)
+          case _ => Bindings.Zero()
         }
-      case None => None
+      case None => Bindings.Zero()
     }
   }
 
-  def matchesR(config: Config, appSpec: AppSpec, cls: SootClass, ctx: Binding) : ScoredBindings = {
-    val filteredOut = parent match {
-      case Some(NamedWildcard("packageNotWhitelisted")) =>
-        config.whitelistPackagePrefixes.asScala.exists(cls.getName.startsWith)
-      case _ => false
-    }
-    if (filteredOut) {
-      return scoredBindingsFalse()
-    }
-
-    name.matchesR(cls.getName) match {
-      case (nameBinding, nameBindingScore) =>
-        val (parentBinding, parentBindingScore) = if (parent.isDefined) {
-          if (cls.hasSuperclass || cls.getInterfaceCount > 0) {
-            if (cls.hasSuperclass) {
-              parent.get.matchesR(cls.getSuperclass.getName)
-            } else {
-              val matches = cls.getInterfaces.asScala.map(i => parent.get.matchesR(i.getName))
-              matches.maxBy(_._2)
-            }
-          } else {
-            scoredBindingFalse()
-          }
-        } else {
-          scoredBindingFalse()
-        }
-        val (bs, score) = choose(cls.getMethods.asScala.toList, methods.size).map(chosen => {
-          chosen.zip(methods).map({ case (m, spec) =>
-            spec.matchesR(config, appSpec, this, m, ctx)
-          }).fold(scoredBindingsTrue())(mergeScoredBindings)
-        }).fold(scoredBindingsTrue())(extendScoredBindings)
-        (extend(extend(bs, nameBinding), parentBinding), score * parentBindingScore * nameBindingScore)
-    }
-  }
+//  def matchesR(config: Config, appSpec: AppSpec, cls: SootClass, ctx: Binding) : ScoredBindings = {
+//    val filteredOut = parent match {
+//      case Some(NamedWildcard("packageNotWhitelisted")) =>
+//        config.whitelistPackagePrefixes.asScala.exists(cls.getName.startsWith)
+//      case _ => false
+//    }
+//    if (filteredOut) {
+//      return scoredBindingsFalse()
+//    }
+//
+//    name.matchesR(cls.getName) match {
+//      case (nameBinding, nameBindingScore) =>
+//        val (parentBinding, parentBindingScore) = if (parent.isDefined) {
+//          if (cls.hasSuperclass || cls.getInterfaceCount > 0) {
+//            if (cls.hasSuperclass) {
+//              parent.get.matchesR(cls.getSuperclass.getName)
+//            } else {
+//              val matches = cls.getInterfaces.asScala.map(i => parent.get.matchesR(i.getName))
+//              matches.maxBy(_._2)
+//            }
+//          } else {
+//            scoredBindingFalse()
+//          }
+//        } else {
+//          scoredBindingFalse()
+//        }
+//        val (bs, score) = choose(cls.getMethods.asScala.toList, methods.size).map(chosen => {
+//          chosen.zip(methods).map({ case (m, spec) =>
+//            spec.matchesR(config, appSpec, this, m, ctx)
+//          }).fold(scoredBindingsTrue())(mergeScoredBindings)
+//        }).fold(scoredBindingsTrue())(extendScoredBindings)
+//        (extend(extend(bs, nameBinding), parentBinding), score * parentBindingScore * nameBindingScore)
+//    }
+//  }
+  /**
+   * Minimum set of variables in ctx required to solve, otherwise calling this will abort
+   *
+   * @return
+   */
+  override def minSolveCtx(): Set[String] = Set()
 }

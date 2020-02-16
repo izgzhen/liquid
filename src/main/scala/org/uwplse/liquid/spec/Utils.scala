@@ -1,23 +1,16 @@
 package org.uwplse.liquid.spec
 
-import org.uwplse.liquid.Analysis
+import org.uwplse.liquid.analysis.Binding
 
 object Utils {
-  type Binding = Map[String, SemanticVal]
-  type OptBinding = Option[Map[String, SemanticVal]]
-  type ScoredBinding = (Map[String, SemanticVal], Double)
-  type Bindings = List[Map[String, SemanticVal]]
-  type OptBindings = Option[List[Map[String, SemanticVal]]]
-  type ScoredBindings = (List[Map[String, SemanticVal]], Double)
+  type OptBinding = Option[Binding]
+//  type ScoredBinding = (Map[String, SemanticVal], Double)
+//  type ScoredBindings = (List[Map[String, SemanticVal]], Double)
 
   // TODO: reason about this (https://github.com/izgzhen/liquid/issues/8)
   //   compute "and" with an empty list of constraint results in an empty list
   def optBinding(b: Boolean) : OptBinding = {
-    if (b) Some(Map()) else None
-  }
-
-  def optBindings(b: Boolean) : OptBindings = {
-    if (b) Some(List(Map())) else None
+    if (b) Some(Binding.one()) else None
   }
 
   def choose[T](l: List[T], k: Int): Iterable[List[T]] = {
@@ -73,82 +66,57 @@ object Utils {
     bs.map(b1 => b1 ++ b)
   }
 
-  def mergeBinding(m1: Binding, m2: Binding): Option[Binding] = {
-    val common = m1.keySet intersect m2.keySet
-    if (common.nonEmpty && !common.forall(k => Analysis.equalValue(m1(k), m2(k)))) {
-      None
-    } else {
-      Some(m1 ++ m2)
-    }
-  }
-
   def mergeOptBinding(m1: OptBinding, m2: OptBinding): OptBinding = {
     (m1, m2) match {
-      case (Some(m1_), Some(m2_)) => mergeBinding(m1_, m2_)
+      case (Some(m1_), Some(m2_)) => m1_.prod(m2_)
       case _ => None
     }
   }
 
-  def mergeOptBindings(b1: OptBindings, b2: OptBindings) : OptBindings = {
-    (b1, b2) match {
-      case (Some(bs1), Some(bs2)) => {
-        val matches = bs1.flatMap(m1 => bs2.flatMap(m2 => {
-          mergeBinding(m1, m2)
-        }))
-        if (matches.nonEmpty) {
-          Some(matches)
-        } else {
-          None
-        }
-      }
-      case _ => None
-    }
-  }
-
-  def similarityFromBoolean(x: Boolean): Double = if (x) { 1.0 } else { 0.0 }
-
-  def scoredBindingFrom(y: Double): ScoredBinding = (Map(), y)
-  def scoredBindingsFrom(y: Double): ScoredBindings = (List(Map()), y)
-
-  def scoredBindingFalse(): ScoredBinding = scoredBindingFrom(0.0)
-  def scoredBindingTrue(): ScoredBinding = scoredBindingFrom(1.0)
-
-  def scoredBindingsFalse(): ScoredBindings = scoredBindingsFrom(0.0)
-  def scoredBindingsTrue(): ScoredBindings = scoredBindingsFrom(1.0)
-
-  def scoreProd(d1: Double, d2: Double): Double = d1 * d2
-
-  def mergeScoredBinding(b1: ScoredBinding, b2: ScoredBinding): ScoredBinding = {
-    val (b1_, s1) = b1
-    val (b2_, s2) = b2
-    mergeBinding(b1_, b2_) match {
-      case Some(b) => (b, s1 * s2)
-      case _ => scoredBindingFalse()
-    }
-  }
-
-  def extendScoredBindings(b1: ScoredBindings, b2: ScoredBindings): ScoredBindings = {
-    val (b1_, s1) = b1
-    val (b2_, s2) = b2
-    (b1_ ++ b2_, s1 * s2)
-  }
-
-  def scoreOptBinding(b: OptBinding): ScoredBinding = b match {
-    case Some(b_) => (b_, 1.0)
-    case None => scoredBindingFalse()
-  }
-
-  def scoredBindingProd(b: ScoredBinding, y: Double): ScoredBinding = (b._1, b._2 * y)
-
-
-  def mergeScoredBindings(b1: ScoredBindings, b2: ScoredBindings) : ScoredBindings = {
-    val (bs1, s1) = b1
-    val (bs2, s2) = b2
-    val matches = bs1.flatMap(m1 => bs2.flatMap(m2 => { mergeBinding(m1, m2) }))
-    if (matches.nonEmpty) {
-      (matches, s1 * s2)
-    } else {
-      scoredBindingsFalse()
-    }
-  }
+//  def similarityFromBoolean(x: Boolean): Double = if (x) { 1.0 } else { 0.0 }
+//
+//  def scoredBindingFrom(y: Double): ScoredBinding = (Map(), y)
+//  def scoredBindingsFrom(y: Double): ScoredBindings = (List(Map()), y)
+//
+//  def scoredBindingFalse(): ScoredBinding = scoredBindingFrom(0.0)
+//  def scoredBindingTrue(): ScoredBinding = scoredBindingFrom(1.0)
+//
+//  def scoredBindingsFalse(): ScoredBindings = scoredBindingsFrom(0.0)
+//  def scoredBindingsTrue(): ScoredBindings = scoredBindingsFrom(1.0)
+//
+//  def scoreProd(d1: Double, d2: Double): Double = d1 * d2
+//
+//  def mergeScoredBinding(b1: ScoredBinding, b2: ScoredBinding): ScoredBinding = {
+//    val (b1_, s1) = b1
+//    val (b2_, s2) = b2
+//    mergeBinding(b1_, b2_) match {
+//      case Some(b) => (b, s1 * s2)
+//      case _ => scoredBindingFalse()
+//    }
+//  }
+//
+//  def extendScoredBindings(b1: ScoredBindings, b2: ScoredBindings): ScoredBindings = {
+//    val (b1_, s1) = b1
+//    val (b2_, s2) = b2
+//    (b1_ ++ b2_, s1 * s2)
+//  }
+//
+//  def scoreOptBinding(b: OptBinding): ScoredBinding = b match {
+//    case Some(b_) => (b_, 1.0)
+//    case None => scoredBindingFalse()
+//  }
+//
+//  def scoredBindingProd(b: ScoredBinding, y: Double): ScoredBinding = (b._1, b._2 * y)
+//
+//
+//  def mergeScoredBindings(b1: ScoredBindings, b2: ScoredBindings) : ScoredBindings = {
+//    val (bs1, s1) = b1
+//    val (bs2, s2) = b2
+//    val matches = bs1.flatMap(m1 => bs2.flatMap(m2 => { mergeBinding(m1, m2) }))
+//    if (matches.nonEmpty) {
+//      (matches, s1 * s2)
+//    } else {
+//      scoredBindingsFalse()
+//    }
+//  }
 }
