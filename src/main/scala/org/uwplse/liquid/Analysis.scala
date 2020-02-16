@@ -102,12 +102,19 @@ object Analysis {
     setSootOptions(config.input)
     soot.Scene.v.loadNecessaryClasses()
     allClasses = setEntrypoints()
+    println(s"allClasses: ${allClasses.size}")
+    val allPkgs = allClasses.toList.map(_.getPackageName.split("\\.").slice(0, 2).mkString("."))
+    val counted = allPkgs.toSet.map((pkg: String) => (pkg, allPkgs.count(p => p == pkg)))
+    for ((pkg, count) <- counted) {
+      println(s"- ${pkg}: ${count}")
+    }
   }
 
   def getAllClasses: Set[SootClass] = allClasses
   def getAllMethods: Set[SootMethod] = {
     if (allMethods.isEmpty) {
       allMethods = Scene.v().getReachableMethods.listener().asScala.map(_.method).toSet
+      println(s"allMethods: ${allMethods.size}")
     }
     allMethods
   }

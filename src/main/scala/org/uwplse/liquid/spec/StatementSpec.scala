@@ -7,6 +7,7 @@ import org.uwplse.liquid.spec.Utils._
 import soot.{Local, Value}
 import soot.jimple.{DefinitionStmt, InstanceInvokeExpr, Stmt}
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 sealed abstract class Arguments extends Product with Serializable
@@ -24,9 +25,21 @@ sealed abstract class StatementSpec extends Product with Serializable {
 }
 
 object StatementSpec {
+  val invokeMatches : mutable.Map[(Invoke, AppSpec, ClassSpec,  MethodEnv, Stmt, Binding), Option[Binding]] = mutable.Map()
+
   final case class Invoke(name: String, args: Arguments, lhsBinder: Option[String]) extends StatementSpec {
     def matches(appSpec: AppSpec, classSpec: ClassSpec,
                 methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : Option[Binding] = {
+      val key = (this, appSpec, classSpec, methodEnv, stmt, ctx)
+      if (!invokeMatches.contains(key)) {
+        val value = _matches(appSpec, classSpec, methodEnv, stmt, ctx)
+        invokeMatches.addOne(key, value)
+      }
+      invokeMatches(key)
+    }
+
+    def _matches(appSpec: AppSpec, classSpec: ClassSpec,
+                 methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : Option[Binding] = {
       if (stmt.containsInvokeExpr()) {
         val optInvokedBinding = ctx.m.get(name) match {
           case Some(value) =>

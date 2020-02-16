@@ -14,12 +14,15 @@ object Utils {
   }
 
   def choose[T](l: List[T], k: Int): Iterable[List[T]] = {
-    if (k == 0) {
-      List()
-    } else if (k == 1) {
-      l.map(List(_))
+    if (k > 0) {
+      l match {
+        case ::(head, next) =>
+          choose(next, k - 1).map(xs => head :: xs) ++
+            choose(next, k)
+        case Nil => List()
+      }
     } else {
-      choose(l, k-1).flatMap(chosen => l.map(x => x::chosen))
+      List(List())
     }
   }
 

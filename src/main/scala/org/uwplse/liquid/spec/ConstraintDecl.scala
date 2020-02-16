@@ -36,4 +36,6 @@ case class ConstraintDecl(name: String, argNames: List[String]) extends Constrai
    * @return
    */
   override def solveCost(ctx: Set[String]): Int = 1
+
+  override def solvedSize(ctx: Set[String]): Int = 1
 }

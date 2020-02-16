@@ -15,7 +15,20 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
     if (Analysis.getAllClasses.isEmpty) {
       Bindings.one()
     } else {
-      Analysis.getAllClasses.map(c => matches(appSpec, c, ctx)).fold(Bindings.Zero()){ case (b1, b2) => b1.sum(b2) }
+      name match {
+        case NamedWildcard(binder) =>
+          ctx.m.get(binder) match {
+            case Some(value) =>
+              val c = soot.Scene.v.getSootClass(value.asInstanceOf[SemanticVal.Name].name)
+              return matches(appSpec, c, ctx)
+            case None =>
+          }
+        case _ =>
+      }
+      Analysis.getAllClasses.toList.zipWithIndex.map { case (c, idx) =>
+        println(s"Matching class #${idx}/${Analysis.getAllClasses.size}")
+        matches(appSpec, c, ctx)
+      }.fold(Bindings.Zero()){ case (b1, b2) => b1.sum(b2) }
     }
   }
 
@@ -25,10 +38,15 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
         if (ctx.contains(binder)) {
           methods.map(m => m.solveCost(ctx)).sum
         } else {
-          Analysis.getAllClasses.map(c => c.getMethods.size() * methods.size).sum
+          Analysis.getAllClasses.map(c => c.getMethods.size() * methods.map(_.solveCost(ctx)).sum).sum
         }
       case IdentifierPattern.StringIdentifier(_) => 1
     }
+  }
+
+  override def solvedSize(ctx: Set[String]): Int = {
+    val classFactor = if (name.isInstanceOf[NamedWildcard]) { Analysis.getAllClasses.size } else { 1 }
+    classFactor * methods.size
   }
 
   def matches(appSpec: AppSpec, cls: SootClass, ctx: Binding) : Bindings = {
@@ -62,12 +80,16 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
         }
         matchedParent match {
           case Some(parentBinding) =>
-            val bs = Bindings.from(choose(cls.getMethods.asScala.toList, methods.size).flatMap(chosen => {
-              assert(chosen.size == methods.size)
-              chosen.zip(methods).map({
-                case (m, spec) => spec.matches(appSpec, this, m, ctx)
-              }).fold(Bindings.Zero()){ case (x,y) => x.sum(y) }
-            }))
+            val bs = Bindings.from({
+              val choices = choose(cls.getMethods.asScala.toList, methods.size)
+              choices.zipWithIndex.flatMap { case (chosen, idx) =>
+                assert(chosen.size == methods.size)
+                println(s"Matching method #${idx}/${choices.size}")
+                chosen.zip(methods).map({
+                  case (m, spec) => spec.matches(appSpec, this, m, ctx)
+                }).fold(Bindings.Zero()){ case (x,y) => x.sum(y) }
+              }
+            })
             bs.extend(nameBinding).extend(parentBinding)
           case _ => Bindings.Zero()
         }

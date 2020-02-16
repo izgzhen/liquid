@@ -2,6 +2,7 @@ package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.Analysis
 import org.uwplse.liquid.analysis.{Binding, Bindings}
+import org.uwplse.liquid.spec.IdentifierPattern.{NamedWildcard, StringIdentifier}
 import org.uwplse.liquid.spec.Utils._
 import soot.SootMethod
 
@@ -11,7 +12,7 @@ object PatternDecl {
   final case class MethodSignature(name: String, classId: IdentifierPattern, methodId: IdentifierPattern) extends PatternDecl {
     def solve(appSpec: AppSpec, ctx: Binding): Bindings = {
       ctx.m.get(name) match {
-        case Some(value) =>{
+        case Some(value) => {
           val binding = matches(value.asInstanceOf[SemanticVal.Method].m)
           if (binding.isDefined) {
             Bindings.NonEmpty(binding.get, List())
@@ -20,6 +21,14 @@ object PatternDecl {
           }
         }
         case None => Bindings.from(Analysis.getAllMethods.flatMap(m => matches(m)))
+      }
+    }
+
+    def solvedSize(ctx: Set[String]): Int = {
+      (classId, methodId) match {
+        case (NamedWildcard(_), NamedWildcard(_)) => Analysis.getAllMethods.size
+        case (StringIdentifier(_), StringIdentifier(_)) => 1
+        case _ => Analysis.getAllMethods.size / Analysis.getAllClasses.size
       }
     }
 

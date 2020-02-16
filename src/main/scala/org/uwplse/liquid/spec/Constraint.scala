@@ -12,6 +12,7 @@ trait Constraint {
    */
   def solve(appSpec: AppSpec, ctx: Binding): Bindings
   def solveCost(ctx: Set[String]): Int
+  def solvedSize(ctx: Set[String]): Int
 
   /**
    * Minimum set of variables in ctx required to solve, otherwise calling this will abort

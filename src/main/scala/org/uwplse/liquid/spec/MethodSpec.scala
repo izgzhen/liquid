@@ -18,7 +18,9 @@ case class MethodEnv(methodSpec: MethodSpec, sootMethod: SootMethod)
  */
 case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
                       locals: Map[String, String], statements: List[StatementSpec]) {
-  def solveCost(ctx: Set[String]): Int = ???
+  def solveCost(ctx: Set[String]): Int = {
+    statements.size * statements.size
+  }
 
   def matches(appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod, ctx: Binding): Bindings = {
     try {
@@ -35,12 +37,11 @@ case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
             val bindings: Bindings = if (statements.isEmpty) {
               Bindings.one()
             } else {
-              Bindings.from(choose(m.getActiveBody.getUnits.asScala.toList, statements.size).flatMap(chosen => {
-                assert(chosen.size == statements.size)
-                chosen.zip(statements).map({ case (s, spec) =>
+              statements.map(spec =>
+                Bindings.from(m.getActiveBody.getUnits.asScala.flatMap(s =>
                   spec.matches(appSpec, classSpec, env, s.asInstanceOf[Stmt], ctx)
-                }).fold(optBinding(true))(mergeOptBinding)
-              }))
+                ))
+              ).fold(Bindings.one()) { case (x, y) => x.prod(y) }
             }
             bindings.extend(nameBinding).extend(retBinding)
           case None => Bindings.Zero()

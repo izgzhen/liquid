@@ -9,7 +9,8 @@ import org.uwplse.liquid.spec.Utils._
 
 class TestUtils extends TestCase {
   @Test def testChoose(): Unit = {
-    assertEquals(64, choose(List(1,2,3,4), 3).toSet.size)
+    assertEquals(List(List(1, 2), List(1, 3), List(2, 3)), choose(List(1,2,3), 2).toList)
+    assertEquals(4, choose(List(1,2,3,4), 3).toSet.size)
   }
 
   @Test def testProd(): Unit = {
