@@ -32,19 +32,19 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
     }
   }
 
-  override def solveCost(ctx: Set[String]): Int = {
+  override def solveCost(ctx: Set[String]): Long = {
     name match {
       case NamedWildcard(binder) =>
         if (ctx.contains(binder)) {
           methods.map(m => m.solveCost(ctx)).sum
         } else {
-          Analysis.getAllClasses.map(c => c.getMethods.size() * methods.map(_.solveCost(ctx)).sum).sum
+          Analysis.getAllClasses.map(c => c.getMethods.size().toLong * methods.map(_.solveCost(ctx)).sum).sum
         }
       case IdentifierPattern.StringIdentifier(_) => 1
     }
   }
 
-  override def solvedSize(ctx: Set[String]): Int = {
+  override def solvedSize(ctx: Set[String]): Long = {
     val classFactor = if (name.isInstanceOf[NamedWildcard]) { Analysis.getAllClasses.size } else { 1 }
     classFactor * methods.size
   }

@@ -18,8 +18,8 @@ case class MethodEnv(methodSpec: MethodSpec, sootMethod: SootMethod)
  */
 case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
                       locals: Map[String, String], statements: List[StatementSpec]) {
-  def solveCost(ctx: Set[String]): Int = {
-    statements.size * statements.size
+  def solveCost(ctx: Set[String]): Long = {
+    statements.size.toLong * statements.size.toLong
   }
 
   def matches(appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod, ctx: Binding): Bindings = {

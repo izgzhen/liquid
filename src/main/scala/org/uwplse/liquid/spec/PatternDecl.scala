@@ -25,16 +25,16 @@ object PatternDecl {
       }
     }
 
-    def solvedSize(ctx: Set[String]): Int = {
+    def solvedSize(ctx: Set[String]): Long = {
       (classId, methodId) match {
-        case (NamedWildcard(_), NamedWildcard(_)) => Analysis.getAllMethods.size
+        case (NamedWildcard(_), NamedWildcard(_)) => Analysis.getAllMethods.size.toLong
         case (StringIdentifier(_), StringIdentifier(_)) => 1
-        case _ => Analysis.getAllMethods.size / Analysis.getAllClasses.size
+        case _ => Analysis.getAllMethods.size.toLong / Analysis.getAllClasses.size.toLong
       }
     }
 
-    def solveCost(ctx: Set[String]): Int = {
-      if (ctx.contains(name)) { 1 } else Analysis.getAllMethods.size
+    def solveCost(ctx: Set[String]): Long = {
+      if (ctx.contains(name)) { 1 } else Analysis.getAllMethods.size.toLong
     }
 
     def matches(m: SootMethod): OptBinding = {

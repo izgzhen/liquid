@@ -35,7 +35,7 @@ case class ConstraintDecl(name: String, argNames: List[String]) extends Constrai
    * Map query will become constant overtime
    * @return
    */
-  override def solveCost(ctx: Set[String]): Int = 1
+  override def solveCost(ctx: Set[String]): Long = 1
 
-  override def solvedSize(ctx: Set[String]): Int = 1
+  override def solvedSize(ctx: Set[String]): Long = 1
 }
