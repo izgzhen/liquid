@@ -29,9 +29,7 @@ object Match {
     soot.PackManager.v.getPack("wjtp").add(new Transform("wjtp.match", transformer))
     soot.PackManager.v.runPacks()
 
-    val ret = transformer.matchedAll.map(m => m.m.filter(_._2.isInstanceOf[SemanticVal.Name]).map(p => {
-      (p._1, p._2.asInstanceOf[SemanticVal.Name].name)
-    })).toList
+    val ret = transformer.matchedAll
 
     if (outPath.isDefined) {
       println("Serializing " + ret.size + " results...")

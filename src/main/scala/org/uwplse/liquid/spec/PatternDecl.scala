@@ -9,7 +9,8 @@ import soot.SootMethod
 sealed abstract class PatternDecl extends Product with Serializable with Constraint
 
 object PatternDecl {
-  final case class MethodSignature(name: String, classId: IdentifierPattern, methodId: IdentifierPattern) extends PatternDecl {
+  final case class MethodSignature(name: String, classId: IdentifierPattern,
+                                   methodId: IdentifierPattern, exported: Boolean) extends PatternDecl {
     def solve(appSpec: AppSpec, ctx: Binding): Bindings = {
       ctx.m.get(name) match {
         case Some(value) => {

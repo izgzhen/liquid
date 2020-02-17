@@ -22,8 +22,10 @@ class TestParser extends TestCase {
 
   @Test def testParsePatternDecl(): Unit = {
     val parser = new SpecParser()
-    assertEquals(MethodSignature("exec", NamedWildcard("execClass"), StringIdentifier("exec")),
+    assertEquals(MethodSignature("exec", NamedWildcard("execClass"), StringIdentifier("exec"), exported = false),
       parser.parse(parser.pDecl, """methodSig exec(_execClass, exec)""").get)
+    assertEquals(MethodSignature("exec", NamedWildcard("execClass"), StringIdentifier("exec"), exported = true),
+      parser.parse(parser.pDecl, """exported methodSig exec(_execClass, exec)""").get)
   }
 
   @Test def testParseLocalVarDecl(): Unit = {

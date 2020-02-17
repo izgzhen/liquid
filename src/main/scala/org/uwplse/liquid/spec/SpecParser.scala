@@ -64,8 +64,11 @@ class SpecParser extends RegexParsers {
     namedWildcard | wildcard | idString
   }
   def pDecl: Parser[PatternDecl] = {
-    val pMethodSig = """methodSig""".r ~ pName ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
-      case _ ~ name ~ _ ~ classId ~ _ ~ methodId ~ _ => MethodSignature(name, classId, methodId)
+    val pNonExported = "" ^^ { _ => false }
+    val pExported = """exported""".r ^^ { _ => true }
+
+    val pMethodSig = (pExported | pNonExported) ~ """methodSig""".r ~ pName ~ leftParen ~ pId ~ comma ~ pId ~ rightParen ^^ {
+      case exported ~ _ ~ name ~ _ ~ classId ~ _ ~ methodId ~ _ => MethodSignature(name, classId, methodId, exported)
     }
     pMethodSig
   }

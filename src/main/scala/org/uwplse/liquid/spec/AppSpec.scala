@@ -5,6 +5,12 @@ import org.uwplse.liquid.analysis.Bindings
 import scala.collection.mutable
 
 case class AppSpec(patterns: List[PatternDecl], classes: List[ClassSpec], specialConstraints: List[ConstraintDecl]) {
+  def isExported(k: String): Boolean = {
+    patterns.exists({
+      case PatternDecl.MethodSignature(name, _, _, exported) => name == k && exported
+    })
+  }
+
   def solve(): Bindings = {
     val schedule: mutable.Set[Constraint] = mutable.Set()
     schedule.addAll(patterns ++ classes ++ specialConstraints)

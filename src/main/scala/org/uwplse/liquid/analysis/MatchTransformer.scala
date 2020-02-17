@@ -1,11 +1,11 @@
 package org.uwplse.liquid.analysis
 
 import org.uwplse.liquid.Analysis
-import org.uwplse.liquid.spec.AppSpec
+import org.uwplse.liquid.spec.{AppSpec, SemanticVal}
 import soot.SceneTransformer
 
 class MatchTransformer(val appSpec: AppSpec) extends SceneTransformer {
-  var matchedAll: Bindings = _
+  var matchedAll: List[Map[String, String]] = _
   override protected def internalTransform(phaseName: String, map: java.util.Map[String, String]): Unit = {
     println(Analysis.getConfig)
 
@@ -22,7 +22,19 @@ class MatchTransformer(val appSpec: AppSpec) extends SceneTransformer {
 //        })
 //      }
     } else {
-      matchedAll = appSpec.solve()
+      val bindings = appSpec.solve()
+      matchedAll = bindings.map(b => {
+        b.m.flatMap {
+          case (k, SemanticVal.Method(m)) =>
+            if (appSpec.isExported(k)) {
+              Some((k, m.getSignature))
+            } else {
+              None
+            }
+          case (k, SemanticVal.Name(v)) => Some((k, v))
+          case _ => None
+        }
+      }).toList
     }
   }
 }

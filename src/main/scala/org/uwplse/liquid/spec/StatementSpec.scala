@@ -2,7 +2,7 @@ package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.analysis.Binding
 import org.uwplse.liquid.spec.Expr.VarExpr
-import org.uwplse.liquid.{Analysis, Config}
+import org.uwplse.liquid.Analysis
 import org.uwplse.liquid.spec.Utils._
 import soot.{Local, Value}
 import soot.jimple.{DefinitionStmt, InstanceInvokeExpr, Stmt}
