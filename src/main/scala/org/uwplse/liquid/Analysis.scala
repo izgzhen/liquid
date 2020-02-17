@@ -5,12 +5,12 @@ import java.util.Collections
 
 import org.uwplse.liquid.SootInputMode.{Android, Java}
 import org.uwplse.liquid.analysis.{DependencyBackProp, DependencyForwardProp}
-import org.uwplse.liquid.spec.SemanticVal
-
+import org.uwplse.liquid.spec.{IdentifierPattern, SemanticVal}
 import heros.InterproceduralCFG
 import heros.solver.IFDSSolver
+import org.uwplse.liquid.Analysis.allClasses
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
-import soot.{Local, Scene, SootClass, SootMethod, Value}
+import soot.{Local, RefType, Scene, SootClass, SootMethod, Type, Value}
 import soot.jimple.{IntConstant, InvokeStmt, Stmt, StringConstant}
 import soot.jimple.toolkits.callgraph.ReachableMethods
 import soot.jimple.toolkits.ide.icfg.{BackwardsInterproceduralCFG, JimpleBasedInterproceduralCFG}
@@ -30,8 +30,8 @@ object Analysis {
   private val aliasAnalysisMap = mutable.Map[SootMethod, LocalMustAliasAnalysis]()
   private val localDefsMap = mutable.Map[SootMethod, SmartLocalDefs]()
   private val constantsMap = mutable.Map[Stmt, Set[Value]]()
-  private var allClasses = Set[SootClass]()
-  private var allMethods = Set[SootMethod]()
+  private var allClasses: Set[SootClass] = _
+  private var allMethods: Set[SootMethod] = _
 
   /**
    * https://soot-build.cs.uni-paderborn.de/public/origin/develop/soot/soot-develop/options/soot_options.htm
@@ -64,20 +64,20 @@ object Analysis {
     Options.v.set_omit_excepting_unit_edges(true)
   }
 
-  private def setEntrypoints(): Set[SootClass] = {
-    var allMethods = List[SootMethod]()
-    var allClasses = List[SootClass]()
+  private def setEntrypoints(): Unit = {
+    var entrypoints = List[SootMethod]()
+    var classes = List[SootClass]()
 
     Scene.v().getApplicationClasses.forEach((appCls: SootClass) => {
       if (appCls.isConcrete) {
         Scene.v.forceResolve(appCls.getName, SootClass.BODIES)
-        allClasses :+= appCls
+        classes :+= appCls
         appCls.getMethods.forEach((appMethod: SootMethod) => {
           try {
             appMethod.retrieveActiveBody
             val b = appMethod.getActiveBody
             if (b != null) {
-              allMethods :+= appMethod
+              entrypoints :+= appMethod
             }
           } catch {
             case _: RuntimeException =>
@@ -86,10 +86,20 @@ object Analysis {
       }
     })
 
-    val entryPointCreator = new DefaultEntryPointCreator(allMethods.map(_.getSignature).asJava)
+    val entryPointCreator = new DefaultEntryPointCreator(entrypoints.map(_.getSignature).asJava)
     val dummyMain = entryPointCreator.createDummyMain
     Scene.v.setEntryPoints(Collections.singletonList(dummyMain))
-    allClasses.toSet
+
+    allClasses = classes.toSet
+    println(s"allClasses: ${allClasses.size}")
+    val allPkgs = allClasses.toList.map(_.getPackageName.split("\\.").slice(0, 2).mkString("."))
+    val counted = allPkgs.toSet.map((pkg: String) => (pkg, allPkgs.count(p => p == pkg)))
+    for ((pkg, count) <- counted) {
+      println(s"- ${pkg}: ${count}")
+    }
+
+    allMethods = Scene.v().getClasses.asScala.flatMap(_.getMethods.asScala).toSet
+    println(s"allMethods: ${allMethods.size}")
   }
 
   /**
@@ -101,23 +111,11 @@ object Analysis {
     this.config = Some(config)
     setSootOptions(config.input)
     soot.Scene.v.loadNecessaryClasses()
-    allClasses = setEntrypoints()
-    println(s"allClasses: ${allClasses.size}")
-    val allPkgs = allClasses.toList.map(_.getPackageName.split("\\.").slice(0, 2).mkString("."))
-    val counted = allPkgs.toSet.map((pkg: String) => (pkg, allPkgs.count(p => p == pkg)))
-    for ((pkg, count) <- counted) {
-      println(s"- ${pkg}: ${count}")
-    }
+    setEntrypoints()
   }
 
   def getAllClasses: Set[SootClass] = allClasses
-  def getAllMethods: Set[SootMethod] = {
-    if (allMethods.isEmpty) {
-      allMethods = Scene.v().getReachableMethods.listener().asScala.map(_.method).toSet
-      println(s"allMethods: ${allMethods.size}")
-    }
-    allMethods
-  }
+  def getAllMethods: Set[SootMethod] = allMethods
 
   def debugUnitToOwner(m: java.util.HashMap[Unit, soot.Body]) : Set[String] = {
     m.asScala.values.map(_.getMethod.getDeclaringClass.getName).toSet
@@ -272,4 +270,22 @@ object Analysis {
   }
 
   def getConfig: Config = config.get
+
+  def typeMatch(typeSpec: String, inputType: Type): Boolean = {
+    inputType match {
+      case ref:RefType =>
+        inputType.toString == typeSpec || isSubClass(ref.getSootClass, IdentifierPattern.StringIdentifier(typeSpec))
+      case _ =>
+        inputType.toString == typeSpec
+    }
+  }
+
+  def isSubClass(child: SootClass, parent: IdentifierPattern): Boolean = {
+    if (child.hasSuperclass || child.getInterfaceCount > 0) {
+      (child.hasSuperclass && parent.matches(child.getSuperclass.getName).isDefined) ||
+        child.getInterfaces.asScala.map(i => parent.matches(i.getName)).exists(_.isDefined)
+    } else {
+      false
+    }
+  }
 }

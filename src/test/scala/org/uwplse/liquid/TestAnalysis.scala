@@ -9,8 +9,9 @@ import org.junit.Test
 import org.uwplse.liquid.Match.runOnce
 import org.uwplse.liquid.SootInputMode.Java
 import org.uwplse.liquid.analysis.ConstantPropTransformer
+import org.uwplse.liquid.spec.IdentifierPattern
 import soot.jimple.Stmt
-import soot.{Scene, SootMethod, Transform}
+import soot.{Scene, SootClass, SootMethod, Transform}
 
 import scala.jdk.CollectionConverters._
 
@@ -18,7 +19,6 @@ class TestAnalysis extends TestCase {
   @Test def testBasic(): Unit = {
     val config = new Config()
     config.input = Java("src/test/resources")
-
     Analysis.setup(config)
     Scene.v.loadClassAndSupport("Test")
     val testClass = Scene.v().getSootClass("Test")
@@ -73,5 +73,15 @@ class TestAnalysis extends TestCase {
     testAnalysis(new Transform("wjtp.constantProp", transformer),
       "src/test/resources/back_abstraction.txt", outputPath, config)
     assertEquals(1, transformer.constants.size)
+  }
+
+  @Test def testTypeMatch(): Unit = {
+    val config = new Config()
+    config.input = Java("src/test/resources")
+    Analysis.setup(config)
+    val list = Scene.v.getSootClass("java.util.List")
+    val arrayList = Scene.v.getSootClass("java.util.ArrayList")
+    assert(Analysis.isSubClass(arrayList, IdentifierPattern.StringIdentifier(list.getName)))
+    assert(Analysis.typeMatch(list.getName, arrayList.getType))
   }
 }

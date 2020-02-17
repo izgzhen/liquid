@@ -1,5 +1,6 @@
 package org.uwplse.liquid.spec
 
+import org.uwplse.liquid.Analysis
 import org.uwplse.liquid.analysis.Binding
 import org.uwplse.liquid.spec.Utils._
 import soot.Value
@@ -24,7 +25,7 @@ object Expr {
 
   final case class VarExpr(binder: String) extends Expr {
     def matches(value: Value, valueContext: SootValueContext) : OptBinding = {
-      if (valueContext.methodEnv.methodSpec.locals(binder) == value.getType.toString) {
+      if (Analysis.typeMatch(valueContext.methodEnv.methodSpec.locals(binder), value.getType)) {
         Some(Binding(Map((binder, SemanticVal.SootValue(value, valueContext)))))
       } else {
         None

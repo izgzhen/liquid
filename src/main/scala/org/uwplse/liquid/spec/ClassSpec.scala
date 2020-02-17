@@ -26,7 +26,7 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
         case _ =>
       }
       Analysis.getAllClasses.toList.zipWithIndex.map { case (c, idx) =>
-        println(s"Matching class #${idx}/${Analysis.getAllClasses.size}")
+//        println(s"Matching class #${idx}/${Analysis.getAllClasses.size}")
         matches(appSpec, c, ctx)
       }.fold(Bindings.Zero()){ case (b1, b2) => b1.sum(b2) }
     }
@@ -62,19 +62,7 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
     name.matches(cls.getName) match {
       case Some(nameBinding) =>
         val matchedParent = if (parent.isDefined) {
-          if (cls.hasSuperclass || cls.getInterfaceCount > 0) {
-            if (cls.hasSuperclass) {
-              parent.get.matches(cls.getSuperclass.getName)
-            } else {
-              val matches = cls.getInterfaces.asScala.map(i => parent.get.matches(i.getName))
-              matches.filter(_.isDefined) match {
-                case Some(x)::_ => Some(x)
-                case _ => None
-              }
-            }
-          } else {
-            optBinding(false)
-          }
+          optBinding(Analysis.isSubClass(cls, parent.get))
         } else {
           optBinding(true)
         }
@@ -84,7 +72,7 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
               val choices = choose(cls.getMethods.asScala.toList, methods.size)
               choices.zipWithIndex.flatMap { case (chosen, idx) =>
                 assert(chosen.size == methods.size)
-                println(s"Matching method #${idx}/${choices.size}")
+//                println(s"Matching method #${idx}/${choices.size}")
                 chosen.zip(methods).map({
                   case (m, spec) => spec.matches(appSpec, this, m, ctx)
                 }).fold(Bindings.Zero()){ case (x,y) => x.sum(y) }
