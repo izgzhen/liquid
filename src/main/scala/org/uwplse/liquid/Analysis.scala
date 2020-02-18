@@ -5,7 +5,7 @@ import java.util.Collections
 
 import org.uwplse.liquid.SootInputMode.{Android, Java}
 import org.uwplse.liquid.analysis.{DependencyBackProp, DependencyForwardProp}
-import org.uwplse.liquid.spec.{IdentifierPattern, SemanticVal}
+import org.uwplse.liquid.spec.{IdentifierPattern, ConcreteVal}
 import heros.InterproceduralCFG
 import heros.solver.IFDSSolver
 import org.uwplse.liquid.Analysis.allClasses
@@ -114,7 +114,7 @@ object Analysis {
     setEntrypoints()
   }
 
-  def getAllClasses: Set[SootClass] = allClasses
+  def getAllAppClasses: Set[SootClass] = allClasses
   def getAllMethods: Set[SootMethod] = allMethods
 
   def debugUnitToOwner(m: java.util.HashMap[Unit, soot.Body]) : Set[String] = {
@@ -247,9 +247,9 @@ object Analysis {
     analysis.mustAlias(l1, stmt1, l2, stmt2) || getLocalDefs(m).getDefsOf(l2) == getLocalDefs(m).getDefsOf(l1)
   }
 
-  def equalValue(v1: SemanticVal, v2: SemanticVal): Boolean = {
+  def equalValue(v1: ConcreteVal, v2: ConcreteVal): Boolean = {
     (v1, v2) match {
-      case (SemanticVal.SootValue(sv1, ctx1), SemanticVal.SootValue(sv2, ctx2)) => {
+      case (ConcreteVal.SootValue(sv1, ctx1), ConcreteVal.SootValue(sv2, ctx2)) => {
         ctx2.methodEnv.sootMethod == ctx1.methodEnv.sootMethod &&
           {
             (sv1, sv2) match {
@@ -259,8 +259,8 @@ object Analysis {
             }
           }
       }
-      case (SemanticVal.Name(x), SemanticVal.Name(y)) => x == y
-      case (SemanticVal.Method(f1), SemanticVal.Method(f2)) => f1 == f2
+      case (ConcreteVal.Name(x), ConcreteVal.Name(y)) => x == y
+      case (ConcreteVal.Method(f1), ConcreteVal.Method(f2)) => f1 == f2
       case _ => throw new NotImplementedError()
     }
   }

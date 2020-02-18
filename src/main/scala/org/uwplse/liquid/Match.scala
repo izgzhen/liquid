@@ -5,7 +5,7 @@ import java.nio.file.{FileSystems, Path, StandardWatchEventKinds}
 
 import com.semantic_graph.JsonUtil
 import org.uwplse.liquid.analysis.MatchTransformer
-import org.uwplse.liquid.spec.{SemanticVal, SpecParser}
+import org.uwplse.liquid.spec.{ConcreteVal, SpecParser}
 import soot.{SootClass, Transform}
 
 import scala.io.Source
@@ -25,16 +25,25 @@ object Match {
     val appSpec = specParser.parse(specParser.pAppSpec, text.mkString).get
     text.close()
 
+    val startTime = System.nanoTime()
     val transformer = new MatchTransformer(appSpec)
     soot.PackManager.v.getPack("wjtp").add(new Transform("wjtp.match", transformer))
     soot.PackManager.v.runPacks()
+    val spentNanoSeconds = System.nanoTime() - startTime
 
     val ret = transformer.matchedAll
 
     if (outPath.isDefined) {
       println("Serializing " + ret.size + " results...")
       val bw = new BufferedWriter(new FileWriter(outPath.get))
-      bw.write(JsonUtil.toJson(ret))
+      bw.write(JsonUtil.toJson(Map(
+        "stats" -> Map(
+          "allAppClasses" -> Analysis.getAllAppClasses.size,
+          "allMethods" -> Analysis.getAllMethods.size,
+          "spentNanoSeconds" -> spentNanoSeconds
+        ),
+        "results" -> ret
+      )))
       bw.close()
     }
     ret

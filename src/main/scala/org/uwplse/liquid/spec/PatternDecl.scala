@@ -8,13 +8,16 @@ import soot.SootMethod
 
 sealed abstract class PatternDecl extends Product with Serializable with Constraint
 
+/**
+ * There are many performance issue in matching and soundness issue in estimating the cost
+ */
 object PatternDecl {
   final case class MethodSignature(name: String, classId: IdentifierPattern,
                                    methodId: IdentifierPattern, exported: Boolean) extends PatternDecl {
     def solve(appSpec: AppSpec, ctx: Binding): Bindings = {
       ctx.m.get(name) match {
         case Some(value) => {
-          val binding = matches(value.asInstanceOf[SemanticVal.Method].m)
+          val binding = matches(value.asInstanceOf[ConcreteVal.Method].m)
           if (binding.isDefined) {
             Bindings.NonEmpty(binding.get, List())
           } else {
@@ -29,7 +32,7 @@ object PatternDecl {
       (classId, methodId) match {
         case (NamedWildcard(_), NamedWildcard(_)) => Analysis.getAllMethods.size.toLong
         case (StringIdentifier(_), StringIdentifier(_)) => 1
-        case _ => Analysis.getAllMethods.size.toLong / Analysis.getAllClasses.size.toLong
+        case _ => Analysis.getAllMethods.size.toLong / Analysis.getAllAppClasses.size.toLong
       }
     }
 
@@ -40,7 +43,7 @@ object PatternDecl {
     def matches(m: SootMethod): OptBinding = {
       val className = m.getDeclaringClass.getName
       mergeOptBinding(classId.matches(className), methodId.matches(m.getName)) match {
-        case Some(binding) => binding.prod(Binding(Map(name -> SemanticVal.Method(m))))
+        case Some(binding) => binding.prod(Binding(Map(name -> ConcreteVal.Method(m))))
         case None => None
       }
     }

@@ -26,7 +26,7 @@ object Expr {
   final case class VarExpr(binder: String) extends Expr {
     def matches(value: Value, valueContext: SootValueContext) : OptBinding = {
       if (Analysis.typeMatch(valueContext.methodEnv.methodSpec.locals(binder), value.getType)) {
-        Some(Binding(Map((binder, SemanticVal.SootValue(value, valueContext)))))
+        Some(Binding(Map((binder, ConcreteVal.SootValue(value, valueContext)))))
       } else {
         None
       }

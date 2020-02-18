@@ -15,7 +15,7 @@ case class ConstraintDecl(name: String, argNames: List[String]) extends Constrai
     name match {
       case "reachable" if argValues.size == 2 =>
         (argValues(0), argValues(1)) match {
-          case (SemanticVal.Method(m1), SemanticVal.Method(m2)) => {
+          case (ConcreteVal.Method(m1), ConcreteVal.Method(m2)) => {
             if (Analysis.isReachable(m1, m2)) {
               return Bindings.one()
             } else {

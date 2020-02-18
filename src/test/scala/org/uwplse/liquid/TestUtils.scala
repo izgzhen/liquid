@@ -4,7 +4,7 @@ import junit.framework.TestCase
 import org.junit.Assert._
 import org.junit.Test
 import org.uwplse.liquid.analysis.{Binding, Bindings}
-import org.uwplse.liquid.spec.SemanticVal
+import org.uwplse.liquid.spec.ConcreteVal
 import org.uwplse.liquid.spec.Utils._
 
 class TestUtils extends TestCase {
@@ -40,10 +40,10 @@ class TestUtils extends TestCase {
 
   @Test def testMergeOptBindings(): Unit = {
     val m0 = Bindings.one()
-    val m1 = Bindings.from(List(Binding(Map("a" -> SemanticVal.Name("a")))))
-    val m2 = Bindings.from(List(Binding(Map("a" -> SemanticVal.Name("b")))))
-    val m3 = Bindings.from(List(Binding(Map("b" -> SemanticVal.Name("b")))))
-    val m4 = Bindings.from(List(Binding(Map("a" -> SemanticVal.Name("a"), "b" -> SemanticVal.Name("b")))))
+    val m1 = Bindings.from(List(Binding(Map("a" -> ConcreteVal.Name("a")))))
+    val m2 = Bindings.from(List(Binding(Map("a" -> ConcreteVal.Name("b")))))
+    val m3 = Bindings.from(List(Binding(Map("b" -> ConcreteVal.Name("b")))))
+    val m4 = Bindings.from(List(Binding(Map("a" -> ConcreteVal.Name("a"), "b" -> ConcreteVal.Name("b")))))
     assertEquals(m1, m0.prod(m1))
     assert(m2.prod(m1).isEmpty)
     assertEquals(m4, m3.prod(m1))
@@ -51,10 +51,10 @@ class TestUtils extends TestCase {
 
   @Test def testMergeOptBinding(): Unit = {
     val m0 = optBinding(true)
-    val m1 = Some(Binding(Map("a" -> SemanticVal.Name("a"))))
-    val m2 = Some(Binding(Map("a" -> SemanticVal.Name("b"))))
-    val m3 = Some(Binding(Map("b" -> SemanticVal.Name("b"))))
-    val m4 = Some(Binding(Map("a" -> SemanticVal.Name("a"), "b" -> SemanticVal.Name("b"))))
+    val m1 = Some(Binding(Map("a" -> ConcreteVal.Name("a"))))
+    val m2 = Some(Binding(Map("a" -> ConcreteVal.Name("b"))))
+    val m3 = Some(Binding(Map("b" -> ConcreteVal.Name("b"))))
+    val m4 = Some(Binding(Map("a" -> ConcreteVal.Name("a"), "b" -> ConcreteVal.Name("b"))))
     assertEquals(m1, mergeOptBinding(m0, m1))
     assertEquals(None, mergeOptBinding(m2, m1))
     assertEquals(m4, mergeOptBinding(m3, m1))

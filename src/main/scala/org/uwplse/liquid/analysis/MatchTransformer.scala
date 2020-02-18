@@ -1,7 +1,7 @@
 package org.uwplse.liquid.analysis
 
 import org.uwplse.liquid.Analysis
-import org.uwplse.liquid.spec.{AppSpec, SemanticVal}
+import org.uwplse.liquid.spec.{AppSpec, ConcreteVal}
 import soot.SceneTransformer
 
 class MatchTransformer(val appSpec: AppSpec) extends SceneTransformer {
@@ -25,13 +25,13 @@ class MatchTransformer(val appSpec: AppSpec) extends SceneTransformer {
       val bindings = appSpec.solve()
       matchedAll = bindings.map(b => {
         b.m.flatMap {
-          case (k, SemanticVal.Method(m)) =>
+          case (k, ConcreteVal.Method(m)) =>
             if (appSpec.isExported(k)) {
               Some((k, m.getSignature))
             } else {
               None
             }
-          case (k, SemanticVal.Name(v)) => Some((k, v))
+          case (k, ConcreteVal.Name(v)) => Some((k, v))
           case _ => None
         }
       }).toList

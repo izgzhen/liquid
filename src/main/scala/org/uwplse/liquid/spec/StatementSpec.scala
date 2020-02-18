@@ -43,14 +43,14 @@ object StatementSpec {
       if (stmt.containsInvokeExpr()) {
         val optInvokedBinding = ctx.m.get(name) match {
           case Some(value) =>
-            val matchedMethod = value.asInstanceOf[SemanticVal.Method].m
+            val matchedMethod = value.asInstanceOf[ConcreteVal.Method].m
             if (matchedMethod == stmt.getInvokeExpr.getMethod) {
               Some(Binding.one())
             } else {
               None
             }
           case None =>
-            Some(Binding(Map(name -> SemanticVal.Method(stmt.getInvokeExpr.getMethod))))
+            Some(Binding(Map(name -> ConcreteVal.Method(stmt.getInvokeExpr.getMethod))))
         }
         optInvokedBinding match {
           case Some(invokedBinding) =>

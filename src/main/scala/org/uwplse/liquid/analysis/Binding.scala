@@ -1,10 +1,10 @@
 package org.uwplse.liquid.analysis
 
 import org.uwplse.liquid.Analysis
-import org.uwplse.liquid.spec.SemanticVal
+import org.uwplse.liquid.spec.ConcreteVal
 
 /* Created at 2/15/20 by zhen */
-case class Binding(m: Map[String, SemanticVal]) {
+case class Binding(m: Map[String, ConcreteVal]) {
   def sum(b2: Binding): Bindings = {
     assert (b2.m.keySet == m.keySet)
     Bindings.NonEmpty(this, List(b2))

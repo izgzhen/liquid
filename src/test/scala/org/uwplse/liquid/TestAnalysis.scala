@@ -22,7 +22,7 @@ class TestAnalysis extends TestCase {
     Analysis.setup(config)
     Scene.v.loadClassAndSupport("Test")
     val testClass = Scene.v().getSootClass("Test")
-    assert(Analysis.getAllClasses.contains(testClass))
+    assert(Analysis.getAllAppClasses.contains(testClass))
     val ret = runOnce(config, "src/test/resources/test.txt", None)
     assertEquals(
       List(Map("Test" -> "Test", "main" -> "main", "ret" -> "void")),
