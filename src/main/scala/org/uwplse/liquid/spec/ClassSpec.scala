@@ -53,6 +53,8 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
     val filteredOut = parent match {
       case Some(NamedWildcard("packageNotWhitelisted")) =>
         Analysis.getConfig.whitelistPackagePrefixes.asScala.exists(cls.getName.startsWith)
+      case Some(NamedWildcard("adClass")) =>
+        Analysis.getConfig.adPackagePrefixes.asScala.exists(cls.getName.startsWith)
       case _ => false
     }
     if (filteredOut) {
