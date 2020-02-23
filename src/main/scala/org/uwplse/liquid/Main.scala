@@ -9,6 +9,7 @@ import org.yaml.snakeyaml.constructor.Constructor
 
 object Main {
   def main(args: Array[String]): Unit = {
+    println("Starting Liquid...")
     val options = new Options
     options.addOption(Option.builder.argName("apk").hasArg.longOpt("apk").desc("apk path").build)
     options.addOption(Option.builder.argName("spec").hasArg.longOpt("spec").desc("spec path").build)

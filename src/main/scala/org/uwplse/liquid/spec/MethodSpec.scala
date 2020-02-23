@@ -1,11 +1,7 @@
 package org.uwplse.liquid.spec
 
 import org.uwplse.liquid.analysis.{Binding, Bindings}
-import org.uwplse.liquid.spec.Utils._
 import soot.SootMethod
-import soot.jimple.Stmt
-
-import scala.jdk.CollectionConverters._
 
 case class MethodEnv(methodSpec: MethodSpec, sootMethod: SootMethod)
 
@@ -14,13 +10,12 @@ case class MethodEnv(methodSpec: MethodSpec, sootMethod: SootMethod)
  * @param ret return type id pattern
  * @param name name id pattern
  * @param locals a map from local variable name to its type id
- * @param statements a list of statement specifications
+ * @param bodySpec body specification
  */
 case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
-                      locals: Map[String, String], statements: List[StatementSpec]) {
-  def solveCost(ctx: Set[String]): Long = {
-    statements.size.toLong * statements.size.toLong
-  }
+                      locals: Map[String, String], bodySpec: BodySpec) {
+
+  def solveCost(ctx: Set[String]): Long = bodySpec.solveCost(ctx)
 
   def matches(appSpec: AppSpec, classSpec: ClassSpec, m: SootMethod, ctx: Binding): Bindings = {
     try {
@@ -34,15 +29,7 @@ case class MethodSpec(ret: IdentifierPattern, name: IdentifierPattern,
       case Some(nameBinding) =>
         ret.matches(m.getReturnType.toString) match {
           case Some(retBinding) =>
-            val bindings: Bindings = if (statements.isEmpty) {
-              Bindings.one()
-            } else {
-              statements.map(spec =>
-                Bindings.from(m.getActiveBody.getUnits.asScala.flatMap(s =>
-                  spec.matches(appSpec, classSpec, env, s.asInstanceOf[Stmt], ctx)
-                ))
-              ).fold(Bindings.one()) { case (x, y) => x.prod(y) }
-            }
+            val bindings = bodySpec.matches(appSpec, classSpec, env, m.getActiveBody, ctx)
             bindings.extend(nameBinding).extend(retBinding)
           case None => Bindings.Zero()
         }

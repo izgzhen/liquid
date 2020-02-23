@@ -29,7 +29,7 @@ class SpecParser extends RegexParsers {
     "_r%s".format(counter)
   }
 
-  def pName: Parser[String]      = """[a-zA-Z]+""".r    ^^ { _.toString }
+  def pName: Parser[String]      = """[a-zA-Z][a-zA-Z0-9]*""".r    ^^ { _.toString }
 
   // [] is used for byte[] in LocalVarDecl
   def pStringId: Parser[String]      = """[<>$0-9\[\]a-zA-Z\\.]+""".r    ^^ { _.toString }
@@ -99,13 +99,29 @@ class SpecParser extends RegexParsers {
     pLhsBinder ~ pName ~ leftParen ~ pArgs ~ rightParen ~ semiColon ^^ {
       case lhs ~ name ~ _ ~ args ~ _ ~ _ => Invoke(name, args, lhs)
     }
+
+  def pStmtBlock: Parser[List[StatementSpec]] = {
+    leftCurlyBrace ~ pStmt.* ~ rightCurlyBrace ^^ {
+      case _ ~ stmts ~ _ => stmts
+    }
+  }
+
+  def pBodySpec: Parser[BodySpec] = {
+    val pJust = (pStmtBlock | pStmt.*) ^^ BodySpec.Just
+    val pOr = pStmtBlock ~ """or""".r ~ pBodySpec ^^ {
+      case s1 ~ _ ~ s2 => BodySpec.Or(BodySpec.Just(s1), s2)
+    }
+    pOr | pJust
+  }
+
   def pMethodSpec: Parser[MethodSpec] = {
-    pId ~ pId ~ leftParen ~ dots ~ rightParen ~ leftCurlyBrace ~ pLocalVarDecl.* ~ pStmt.* ~ rightCurlyBrace ^^ {
+    pId ~ pId ~ leftParen ~ dots ~ rightParen ~ leftCurlyBrace ~ pLocalVarDecl.* ~ pBodySpec ~ rightCurlyBrace ^^ {
       case retId ~ name ~ _ ~ _ ~ _ ~ _ ~ locals ~ stmts ~ _ => {
         MethodSpec(retId, name, locals.toMap, stmts)
       }
     }
   }
+
   def pParentClass : Parser[Option[IdentifierPattern]] = {
     val parentId = leftParen ~ pId ~ rightParen ^^ { case _ ~ name ~ _ => Some(name) }
     val noParent = "" ^^ { _ => None }

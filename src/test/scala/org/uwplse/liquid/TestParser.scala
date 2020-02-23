@@ -2,7 +2,7 @@ package org.uwplse.liquid
 import junit.framework.TestCase
 import org.junit.Assert._
 import org.junit.Test
-import org.uwplse.liquid.spec.{Arguments, ClassSpec, ConstraintDecl, MethodSpec, SpecParser}
+import org.uwplse.liquid.spec.{Arguments, BodySpec, ClassSpec, ConstraintDecl, MethodSpec, SpecParser}
 import org.uwplse.liquid.spec.Expr.{LitExpr, VarExpr}
 import org.uwplse.liquid.spec.IdentifierPattern._
 import org.uwplse.liquid.spec.Literal.{BoolLit, IntLit, RegexLit, StringLit}
@@ -13,6 +13,7 @@ class TestParser extends TestCase {
   @Test def testParseIdentifier(): Unit = {
     val parser = new SpecParser()
     assertEquals(NamedWildcard("H"), parser.parse(parser.pId, "_H").get)
+    assertEquals(NamedWildcard("H2"), parser.parse(parser.pId, "_H2").get)
     assertEquals(StringIdentifier("exec"), parser.parse(parser.pId, """exec""").get)
     assertEquals(StringIdentifier("<init>"), parser.parse(parser.pId, """<init>""").get)
     assertEquals(StringIdentifier("com.revlwp.wallpaper.newlp.MainActivity$16$1$3"), parser.parse(parser.pId, """com.revlwp.wallpaper.newlp.MainActivity$16$1$3""").get)
@@ -51,14 +52,25 @@ class TestParser extends TestCase {
 
   @Test def testParseMethod(): Unit = {
     val parser = new SpecParser()
-    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(Invoke("exec", Arguments.Contain(Set()), None))),
+    assertEquals(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), BodySpec.Just(List(Invoke("exec", Arguments.Contain(Set()), None)))),
       parser.parse(parser.pMethodSpec,
         """_ _f(...) {
           |  exec(...);
           |}""".stripMargin).get)
-    assertEquals(MethodSpec(NamedWildcard("ret"), StringIdentifier("onClick"), Map(), List()),
+    assertEquals(MethodSpec(NamedWildcard("ret"), StringIdentifier("onClick"), Map(), BodySpec.Just(List())),
       parser.parse(parser.pMethodSpec,
         """_ret onClick(...) {
+          |}""".stripMargin).get)
+
+    assertEquals(MethodSpec(NamedWildcard("ret"), StringIdentifier("onClick"), Map(),
+      BodySpec.Or(BodySpec.Just(List(Invoke("exec1", Arguments.Contain(Set()), None))), BodySpec.Just(List(Invoke("exec2", Arguments.Contain(Set()), None))))),
+      parser.parse(parser.pMethodSpec,
+        """_ret onClick(...) {
+          |  {
+          |    exec1(...);
+          |  } or {
+          |    exec2(...);
+          |  }
           |}""".stripMargin).get)
 
     // FIXME: "_ f(...) {}" doesn't work
@@ -80,9 +92,9 @@ class TestParser extends TestCase {
   @Test def testParseClass(): Unit = {
     val parser = new SpecParser()
     assertEquals(ClassSpec(NamedWildcard("H"), None,
-      List(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), List(
+      List(MethodSpec(NamedWildcard("_r0"), NamedWildcard("f"), Map(), BodySpec.Just(List(
         Invoke("exec", Arguments.Contain(Set()), None),
-        Invoke("setIntentPackage", Arguments.Are(List(LitExpr(StringLit("com.android.vending")))), None))))),
+        Invoke("setIntentPackage", Arguments.Are(List(LitExpr(StringLit("com.android.vending")))), None)))))),
       parser.parse(parser.pClassSpec,
         """class _H {
           |  _ _f(...) {
