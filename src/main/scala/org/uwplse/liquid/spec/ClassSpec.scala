@@ -25,8 +25,7 @@ case class ClassSpec(name: IdentifierPattern, parent: Option[IdentifierPattern],
           }
         case _ =>
       }
-      Analysis.getAllAppClasses.toList.zipWithIndex.map { case (c, idx) =>
-//        println(s"Matching class #${idx}/${Analysis.getAllClasses.size}")
+      Analysis.getAllAppClasses.map { c =>
         matches(appSpec, c, ctx)
       }.fold(Bindings.Zero()){ case (b1, b2) => b1.sum(b2) }
     }

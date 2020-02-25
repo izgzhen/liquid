@@ -55,4 +55,22 @@ object Bindings {
   def from(bs: Iterable[Binding]): Bindings = {
     bs.map(x => Bindings.NonEmpty(x, List())).fold(Zero()){ case (x, y) => x.sum(y) }
   }
+
+  /**
+   * More efficient version of inputs.map(f).fold(one())(prod)
+   * @param inputs
+   * @param f
+   * @tparam I
+   * @return
+   */
+  def prods[I](inputs: Iterable[I], f: I => Bindings) : Bindings = {
+    var ret = one()
+    for (i <- inputs) {
+      ret = ret.prod(f.apply(i))
+      if (ret.isInstanceOf[Zero]) {
+        return ret
+      }
+    }
+    ret
+  }
 }

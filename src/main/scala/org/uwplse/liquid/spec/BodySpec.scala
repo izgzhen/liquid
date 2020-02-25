@@ -26,11 +26,11 @@ object BodySpec {
       if (stmts.isEmpty) {
         Bindings.one()
       } else {
-        stmts.map(spec =>
+        Bindings.prods(stmts, (spec: StatementSpec) =>
           Bindings.from(body.getUnits.asScala.flatMap(s =>
-            spec.matches(appSpec, classSpec, env, s.asInstanceOf[Stmt], ctx)
-          ))
-        ).fold(Bindings.one()) { case (x, y) => x.prod(y) }
+            spec.matches(appSpec, classSpec, env, s.asInstanceOf[Stmt], ctx))
+          )
+        )
       }
     }
   }
