@@ -71,7 +71,7 @@ class TestAnalysis extends TestCase {
     val config = new Config()
     val outputPath = "src/test/resources/back_abstraction.new.txt"
     config.abstractionDumpPath = Some(outputPath)
-    val transformer = new TestDependencyBidiPropTransformer(sinkStmt.asInstanceOf[Stmt], config)
+    val transformer = new TestDependencyBidiPropTransformer(method, sinkStmt.asInstanceOf[Stmt], config)
     testAnalysis(new Transform("wjtp.constantProp", transformer),
       "src/test/resources/back_abstraction.txt", outputPath, config)
     assertEquals(1, transformer.constants.size)

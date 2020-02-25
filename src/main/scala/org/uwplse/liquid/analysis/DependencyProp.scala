@@ -6,14 +6,14 @@ import heros.flowfunc.{Identity, KillAll}
 import heros.{DefaultSeeds, FlowFunction, FlowFunctions, InterproceduralCFG}
 import soot.jimple.internal.JimpleLocal
 import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem
-import soot.jimple.{DefinitionStmt, InstanceInvokeExpr, Jimple, ReturnStmt, ReturnVoidStmt, Stmt, StringConstant}
+import soot.jimple.{DefinitionStmt, InstanceInvokeExpr, Jimple, ReturnStmt, Stmt, StringConstant}
 import soot.{EquivalentValue, Local, NullType, Scene, SootMethod, Value}
 import SootUtils._
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class DependencyProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod])
+class DependencyProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod], val recordAbstractions: Boolean)
   extends DefaultJimpleIFDSTabulationProblem[(Value, Set[ConstantVal]), InterproceduralCFG[soot.Unit, SootMethod]](icfg) {
   type Domain = (Value, Set[ConstantVal])
   private val id = Identity.v[Domain]()
@@ -24,8 +24,10 @@ class DependencyProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod])
   val unitAbstractionMap : AbstractionMap = initAbstractionMap()
   val visitedMethods = new mutable.TreeSet[SootMethod]()(Ordering.by(_.toString()))
 
-  private def putUnitAbstractions(u: soot.Unit, abstraction: Domain): Boolean = {
-    unitAbstractionMap.getOrElseUpdate(u, mutable.TreeMap[Value, Set[ConstantVal]]()(Ordering.by(_.toString()))).addOne(abstraction)
+  private def putUnitAbstractions(u: soot.Unit, abstraction: Domain): Unit = {
+    if (recordAbstractions) {
+      unitAbstractionMap.getOrElseUpdate(u, mutable.TreeMap[Value, Set[ConstantVal]]()(Ordering.by(_.toString()))).addOne(abstraction)
+    }
     visitedMethods.add(interproceduralCFG.getMethodOf(u))
   }
 
@@ -99,7 +101,6 @@ class DependencyProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod])
         callSite match {
           case defStmt:DefinitionStmt =>
             exitStmt match {
-              case _:ReturnVoidStmt => killAll
               case retStmt:ReturnStmt =>
                 source: Domain => {
                   val s: Set[Domain] = if (source != zero) {
@@ -115,6 +116,7 @@ class DependencyProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod])
                   }
                   s.asJava
                 }
+              case _ => killAll
             }
           case _ => killAll
         }
@@ -157,10 +159,7 @@ class DependencyProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod])
                         if (tainted.equivTo(instanceInvokeExpr.getBase)) {
                           invokeExpr.getArg(0) match {
                             case strConst:StringConstant =>
-                              Set((tainted, taints.map {
-                                case ConstantVal.IntConst(i) => ConstantVal.StrConst(i.toString + strConst.value)
-                                case ConstantVal.StrConst(s) => ConstantVal.StrConst(s + strConst.value)
-                              }))
+                              Set((tainted, taints ++ Set(ConstantVal.StrConst(strConst.value))))
                             case _ => Set(source)
                           }
                         } else if (tainted.equivTo(instanceInvokeExpr.getArg(0))) {

@@ -4,7 +4,7 @@ import java.io.{FileNotFoundException, PrintWriter}
 import java.util.Collections
 
 import org.uwplse.liquid.SootInputMode.{Android, Java}
-import org.uwplse.liquid.analysis.{ConstantVal, DependencyBackProp, DependencyForwardProp, DependencyProp}
+import org.uwplse.liquid.analysis.{ConstantVal, DependencyBackProp, DependencyForwardProp, DependencyProp, Measure}
 import org.uwplse.liquid.spec.{ConcreteVal, IdentifierPattern}
 import heros.InterproceduralCFG
 import heros.solver.IFDSSolver
@@ -164,13 +164,15 @@ object Analysis {
 
   private var solver: IFDSSolver[soot.Unit, (Value, Set[ConstantVal]), SootMethod, InterproceduralCFG[soot.Unit, SootMethod]] = null
 
-  def dependencyPropAnalysis(sinkMethod: SootMethod, sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
+  def dependencyPropAnalysis(sinkMethod: SootMethod, sink: Stmt, abstractionDumpPath: Option[String], recordAbstractions: Boolean): Set[Value] = {
     if (solver == null) {
       val icfg = new JimpleBasedInterproceduralCFG()
-      val analysis = new DependencyProp(icfg)
+      val analysis = new DependencyProp(icfg, recordAbstractions)
       solver = new IFDSSolver(analysis)
+      System.out.println("========================  Solver started  ========================")
       solver.solve()
-      if (abstractionDumpPath.isDefined) try {
+      System.out.println("========================  Solver finished ========================")
+      if (abstractionDumpPath.isDefined && recordAbstractions) try {
         val printWriter: PrintWriter = new PrintWriter(abstractionDumpPath.get)
         for (m <- analysis.visitedMethods) {
           printWriter.println("====== Method " + m.getSignature + " =======")
@@ -204,13 +206,16 @@ object Analysis {
     }
   }
 
+  private val backwardSolverMeasure = new Measure("backwardSolver.solve")
+  private val forwardSolverMeasure  = new Measure("forwardSolver.solve")
+
   /**
    * This one might be slower since it could invoke a lot of IFDS analyses
    * @param sink
    * @param abstractionDumpPath
    * @return
    */
-  def dependencyPropAnalysis2(sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
+  def dependencyPropAnalysis2(sinkMethod: SootMethod, sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
     val vals = mutable.Set[Value]()
     val icfg = new JimpleBasedInterproceduralCFG(false)
     if (icfg.getMethodOf(sink) == null) {
@@ -222,11 +227,11 @@ object Analysis {
     }
     val backwardAnalysis = new DependencyBackProp(backIcfg, sink)
     val backwardSolver = new IFDSSolver[soot.Unit, Value, SootMethod, InterproceduralCFG[soot.Unit, SootMethod]](backwardAnalysis)
-    backwardSolver.solve()
+    backwardSolverMeasure.incr(backwardSolver.solve)
 
     val forwardAnalysis = new DependencyForwardProp(icfg, backwardAnalysis.unitAbstractionAfterMap, sink)
     val forwardSolver = new IFDSSolver[soot.Unit, Value, SootMethod, InterproceduralCFG[soot.Unit, SootMethod]](forwardAnalysis)
-    forwardSolver.solve()
+    forwardSolverMeasure.incr(forwardSolver.solve)
     // FIXME: iterative
 
     for (m <- forwardAnalysis.visitedMethods) {
@@ -279,7 +284,7 @@ object Analysis {
 
   def getConstantFlowIns(sinkMethod: SootMethod, sink: Stmt): Set[Value] = {
     if (!constantsMap.contains(sink)) {
-      constantsMap.addOne(sink, dependencyPropAnalysis(sinkMethod, sink, getConfig.abstractionDumpPath))
+      constantsMap.addOne(sink, dependencyPropAnalysis2(sinkMethod, sink, getConfig.abstractionDumpPath))
     }
     constantsMap(sink)
   }

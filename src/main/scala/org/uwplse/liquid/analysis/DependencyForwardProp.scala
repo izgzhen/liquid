@@ -12,26 +12,33 @@ import soot.jimple.toolkits.ide.DefaultJimpleIFDSTabulationProblem
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-class DependencyForwardProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod], val initMap: mutable.Map[soot.Unit, mutable.TreeSet[Value]], val sink: Stmt)
+/**
+ * Used to resolve aliasing, might be useless
+ * @param icfg
+ * @param initMap
+ * @param sink
+ */
+class DependencyForwardProp(val icfg: InterproceduralCFG[soot.Unit, SootMethod],
+                            val initMap: mutable.HashMap[soot.Unit, mutable.HashSet[Value]], val sink: Stmt)
   extends DefaultJimpleIFDSTabulationProblem[Value, InterproceduralCFG[soot.Unit, SootMethod]](icfg) {
   private val id = Identity.v[Value]()
   private val killAll = KillAll.v[Value]()
   private val zero = createZeroValue()
-  type abstractionMap = mutable.Map[soot.Unit, mutable.TreeSet[Value]]
-  private def initAbstractionMap() = new mutable.TreeMap[soot.Unit, mutable.TreeSet[Value]]()(Ordering.by(_.toString()))
+  type abstractionMap = mutable.HashMap[soot.Unit, mutable.HashSet[Value]]
+  private def initAbstractionMap() = new mutable.HashMap[soot.Unit, mutable.HashSet[Value]]()
   val unitAbstractionMap     : abstractionMap = initAbstractionMap()
   val unitAbstractionAfterMap: abstractionMap = initAbstractionMap()
-  val visitedMethods = new mutable.TreeSet[SootMethod]()(Ordering.by(_.toString()))
+  val visitedMethods = new mutable.HashSet[SootMethod]()
 
-  private def putUnitAbstractions(u: soot.Unit, abstraction: Value): Boolean = {
-    unitAbstractionMap.getOrElseUpdate(u, mutable.TreeSet[Value]()(Ordering.by(_.toString()))).add(abstraction)
+  private def putUnitAbstractions(u: soot.Unit, abstraction: Value): Unit = {
+    unitAbstractionMap.getOrElseUpdate(u, mutable.HashSet[Value]()).add(abstraction)
     visitedMethods.add(interproceduralCFG.getMethodOf(u))
   }
 
-  private def putUnitAbstractionsAfter(u: soot.Unit, flow: Iterable[Value]): Boolean = {
+  private def putUnitAbstractionsAfter(u: soot.Unit, flow: Iterable[Value]): Unit = {
     for (abstraction <- flow) {
       unitAbstractionAfterMap
-        .getOrElseUpdate(u, mutable.TreeSet[Value]()(Ordering.by(_.toString()))).add(abstraction)
+        .getOrElseUpdate(u, mutable.HashSet[Value]()).add(abstraction)
     }
     visitedMethods.add(interproceduralCFG.getMethodOf(u))
   }
