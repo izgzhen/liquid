@@ -8,10 +8,9 @@ import org.junit.Assert._
 import org.junit.Test
 import org.uwplse.liquid.Match.runOnce
 import org.uwplse.liquid.SootInputMode.Java
-import org.uwplse.liquid.analysis.ConstantPropTransformer
 import org.uwplse.liquid.spec.IdentifierPattern
 import soot.jimple.Stmt
-import soot.{Scene, SootClass, SootMethod, Transform}
+import soot.{Scene, SootMethod, Transform}
 
 import scala.jdk.CollectionConverters._
 
@@ -52,13 +51,16 @@ class TestAnalysis extends TestCase {
   }
 
   @Test def testConstantPropAnalysis(): Unit = {
-    prepareTestAnalysis()
+    val method = prepareTestAnalysis()
+    val sinkStmt = method.getActiveBody.getUnits.asScala.toList(9)
+    assert(sinkStmt.toString() == "virtualinvoke $r7.<java.io.PrintStream: void println(java.lang.Object)>(r2)", sinkStmt.toString())
     val config = new Config()
     val outputPath = "src/test/resources/abstraction.new.txt"
     config.abstractionDumpPath = Some(outputPath)
-    val transformer = new ConstantPropTransformer(config)
+    val transformer = new TestDependencyPropTransformer(method, sinkStmt.asInstanceOf[Stmt], config)
     testAnalysis(new Transform("wjtp.constantProp", transformer),
       "src/test/resources/abstraction.txt", outputPath, config)
+    assertEquals(1, transformer.constants.size)
   }
 
   @Test def testConstantBackPropAnalysis(): Unit = {
@@ -69,7 +71,7 @@ class TestAnalysis extends TestCase {
     val config = new Config()
     val outputPath = "src/test/resources/back_abstraction.new.txt"
     config.abstractionDumpPath = Some(outputPath)
-    val transformer = new DependencyPropTransformer(sinkStmt.asInstanceOf[Stmt], config)
+    val transformer = new TestDependencyBidiPropTransformer(sinkStmt.asInstanceOf[Stmt], config)
     testAnalysis(new Transform("wjtp.constantProp", transformer),
       "src/test/resources/back_abstraction.txt", outputPath, config)
     assertEquals(1, transformer.constants.size)

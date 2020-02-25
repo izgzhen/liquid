@@ -32,15 +32,17 @@
 
 
 
-	Unit: specialinvoke $r4.<java.lang.StringBuilder: void <init>()>()
+
+		$r4: StrConst()
+	Unit: r2 = $r4
+
+		r2: StrConst()
+	Unit: r3 = r2
 
 
 
-	Unit: virtualinvoke r2.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>(r1)
+		r3: StrConst(y)
+	Unit: $r7 = <java.lang.System: java.io.PrintStream out>
 
-	Unit: virtualinvoke r3.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>("y")
-
-
-	Unit: virtualinvoke $r7.<java.io.PrintStream: void println(java.lang.Object)>(r2)
 
 

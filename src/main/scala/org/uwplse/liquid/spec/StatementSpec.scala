@@ -28,17 +28,17 @@ object StatementSpec {
   val invokeMatches : mutable.Map[(Invoke, AppSpec, ClassSpec,  MethodEnv, Stmt, Binding), Option[Binding]] = mutable.Map()
 
   final case class Invoke(name: String, args: Arguments, lhsBinder: Option[String]) extends StatementSpec {
-    def matches(appSpec: AppSpec, classSpec: ClassSpec,
-                methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : Option[Binding] = {
-      val key = (this, appSpec, classSpec, methodEnv, stmt, ctx)
-      if (!invokeMatches.contains(key)) {
-        val value = _matches(appSpec, classSpec, methodEnv, stmt, ctx)
-        invokeMatches.addOne(key, value)
-      }
-      invokeMatches(key)
-    }
+//    def matches(appSpec: AppSpec, classSpec: ClassSpec,
+//                methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : Option[Binding] = {
+//      val key = (this, appSpec, classSpec, methodEnv, stmt, ctx)
+//      if (!invokeMatches.contains(key)) {
+//        val value = _matches(appSpec, classSpec, methodEnv, stmt, ctx)
+//        invokeMatches.addOne(key, value)
+//      }
+//      invokeMatches(key)
+//    }
 
-    def _matches(appSpec: AppSpec, classSpec: ClassSpec,
+    def matches(appSpec: AppSpec, classSpec: ClassSpec,
                  methodEnv: MethodEnv, stmt: Stmt, ctx: Binding) : Option[Binding] = {
       if (stmt.containsInvokeExpr()) {
         val optInvokedBinding = ctx.m.get(name) match {
@@ -61,7 +61,7 @@ object StatementSpec {
                   optBinding(true)
                 }
                 else {
-                  val constantFlowIns: Set[Value] = Analysis.getConstantFlowIns(stmt)
+                  val constantFlowIns: Set[Value] = Analysis.getConstantFlowIns(methodEnv.sootMethod, stmt)
                   optBinding(litArgs.forall(l => {
                     val ret = constantFlowIns.exists(v => l.matches(v, valCtx))
                     ret

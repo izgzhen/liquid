@@ -4,11 +4,10 @@ import java.io.{FileNotFoundException, PrintWriter}
 import java.util.Collections
 
 import org.uwplse.liquid.SootInputMode.{Android, Java}
-import org.uwplse.liquid.analysis.{DependencyBackProp, DependencyForwardProp}
-import org.uwplse.liquid.spec.{IdentifierPattern, ConcreteVal}
+import org.uwplse.liquid.analysis.{ConstantVal, DependencyBackProp, DependencyForwardProp, DependencyProp}
+import org.uwplse.liquid.spec.{ConcreteVal, IdentifierPattern}
 import heros.InterproceduralCFG
 import heros.solver.IFDSSolver
-import org.uwplse.liquid.Analysis.allClasses
 import soot.jimple.infoflow.entryPointCreators.DefaultEntryPointCreator
 import soot.{Local, RefType, Scene, SootClass, SootMethod, Type, Value}
 import soot.jimple.{IntConstant, InvokeStmt, Stmt, StringConstant}
@@ -18,6 +17,7 @@ import soot.jimple.toolkits.pointer.LocalMustAliasAnalysis
 import soot.options.Options
 import soot.toolkits.graph.CompleteUnitGraph
 import soot.toolkits.scalar.{SimpleLiveLocals, SmartLocalDefs}
+import org.uwplse.liquid.analysis.SootUtils._
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -162,15 +162,61 @@ object Analysis {
     reachableMap(m1).contains(m2)
   }
 
-  def dependencyPropAnalysis(sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
+  private var solver: IFDSSolver[soot.Unit, (Value, Set[ConstantVal]), SootMethod, InterproceduralCFG[soot.Unit, SootMethod]] = null
+
+  def dependencyPropAnalysis(sinkMethod: SootMethod, sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
+    if (solver == null) {
+      val icfg = new JimpleBasedInterproceduralCFG()
+      val analysis = new DependencyProp(icfg)
+      solver = new IFDSSolver(analysis)
+      solver.solve()
+      if (abstractionDumpPath.isDefined) try {
+        val printWriter: PrintWriter = new PrintWriter(abstractionDumpPath.get)
+        for (m <- analysis.visitedMethods) {
+          printWriter.println("====== Method " + m.getSignature + " =======")
+          printWriter.println(m.getActiveBody)
+          for (unit <- m.getActiveBody.getUnits.asScala) {
+            val abstractions = analysis.unitAbstractionMap.get(unit)
+            if (abstractions.isDefined) {
+              for (value <- abstractions.get) {
+                for (abstraction <- value._2) {
+                  printWriter.println("\t\t" + value._1 + ": " + abstraction)
+                }
+              }
+            }
+            if (abstractions.isDefined && abstractions.get.nonEmpty) printWriter.println("\tUnit: " + unit)
+            printWriter.println()
+          }
+        }
+        printWriter.close()
+      } catch {
+        case e: FileNotFoundException =>
+          println(e.toString)
+      }
+    }
+    val (locals, constants) = getUsedVals(sink)
+    val allConstants = solver.ifdsResultsAt(sink).asScala.collect {
+      case (v:Local, cs) if locals.exists(l => isAlias(l, v, sink, sink, sinkMethod)) => cs
+    }.flatten.toSet ++ constants
+    allConstants.map {
+      case ConstantVal.IntConst(i) => IntConstant.v(i)
+      case ConstantVal.StrConst(s) => StringConstant.v(s)
+    }
+  }
+
+  /**
+   * This one might be slower since it could invoke a lot of IFDS analyses
+   * @param sink
+   * @param abstractionDumpPath
+   * @return
+   */
+  def dependencyPropAnalysis2(sink: Stmt, abstractionDumpPath: Option[String]): Set[Value] = {
     val vals = mutable.Set[Value]()
     val icfg = new JimpleBasedInterproceduralCFG(false)
-//    assert(icfg.getMethodOf(sink) != null, "IFDSSolver might fail") // FIXME
     if (icfg.getMethodOf(sink) == null) {
       return Set()
     }
     val backIcfg = new BackwardsInterproceduralCFG(icfg)
-//    assert(backIcfg.getMethodOf(sink) != null, "IFDSSolver might fail") // FIXME
     if (backIcfg.getMethodOf(sink) == null) {
       return Set()
     }
@@ -231,14 +277,17 @@ object Analysis {
     vals.toSet
   }
 
-  def getConstantFlowIns(sink: Stmt): Set[Value] = {
+  def getConstantFlowIns(sinkMethod: SootMethod, sink: Stmt): Set[Value] = {
     if (!constantsMap.contains(sink)) {
-      constantsMap.addOne(sink, dependencyPropAnalysis(sink, getConfig.abstractionDumpPath))
+      constantsMap.addOne(sink, dependencyPropAnalysis(sinkMethod, sink, getConfig.abstractionDumpPath))
     }
     constantsMap(sink)
   }
 
   def isAlias(l1: Local, l2: Local, stmt1: Stmt, stmt2: Stmt, m: SootMethod): Boolean = {
+    if (l1.equivTo(l2)) {
+      return true
+    }
     if (!aliasAnalysisMap.contains(m)) {
       val ug = new CompleteUnitGraph(m.getActiveBody)
       aliasAnalysisMap.addOne(m, new LocalMustAliasAnalysis(ug, false))
