@@ -210,7 +210,15 @@ object Analysis {
   private val forwardSolverMeasure  = new Measure("forwardSolver.solve")
 
   /**
-   * This one might be slower since it could invoke a lot of IFDS analyses
+   * Currently we use this one instead of a global flow computation in [[dependencyPropAnalysis]]
+   * This one might be slower since it could invoke a lot of IFDS analyses, which is measured by the above two
+   * metrics.
+   * Ideally, this functionality can be improved in two aspects:
+   * - Use a dedicated alias analysis instead of the second forward propagation to do same thing indirectly
+   * - Track value -> dependents abstraction in the first propagation accumulatively (instead of maintaining separate
+   *   abstractMaps, and store all related IFDS results to improve sharing of analysis results for other sinkStmt
+   * - Modify [[dependencyPropAnalysis]] as a following forward analysis to simulate some computation, e.g. string ops
+   *   etc., _only following the dependency graph we built in the first back prop_
    * @param sink
    * @param abstractionDumpPath
    * @return
