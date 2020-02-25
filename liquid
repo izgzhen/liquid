@@ -10,5 +10,7 @@ spec=$(realpath $2)
 out=$(realpath $3)
 cd $DIR
 
-make jar
+if [ -z "$BATCH_RUN" ]; then
+    make jar
+fi
 java -jar target/scala-2.13/liquid-assembly-0.1.jar --apk $apk --spec $spec --out $out $LIQUID_FLAGS
