@@ -32,29 +32,29 @@
 
 
 
-		TreeSet($r4)
+		List($r4)
 	Unit: specialinvoke $r4.<java.lang.StringBuilder: void <init>()>()
-		TreeSet($r4)
+		List($r4)
 
-		TreeSet($r4, r2)
+		List($r4, r2)
 	Unit: r2 = $r4
-		TreeSet($r4)
+		List($r4)
 
-		TreeSet($r4, r2, r3)
+		List($r4, r2, r3)
 	Unit: r3 = r2
-		TreeSet($r4, r2)
+		List($r4, r2)
 
-		TreeSet($r4, r1, r2, r3)
+		List($r4, r1, r2, r3)
 	Unit: virtualinvoke r2.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>(r1)
-		TreeSet($r4, r2, r3)
+		List($r4, r2, r3)
 
-		TreeSet("y", $r4, r1, r2, r3)
+		List("y", $r4, r1, r2, r3)
 	Unit: virtualinvoke r3.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>("y")
-		TreeSet($r4, r1, r2, r3)
+		List($r4, r1, r2, r3)
 
-		TreeSet("y", $r4, r1, r2, r3)
+		List("y", $r4, r1, r2, r3)
 	Unit: $r7 = <java.lang.System: java.io.PrintStream out>
-		TreeSet("y", $r4, r1, r2, r3)
+		List("y", $r4, r1, r2, r3)
 
 
 

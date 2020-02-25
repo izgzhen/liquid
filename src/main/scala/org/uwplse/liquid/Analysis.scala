@@ -274,11 +274,11 @@ object Analysis {
           val abstractions      = forwardAnalysis.unitAbstractionMap.get(unit)
           val abstractionsAfter = forwardAnalysis.unitAbstractionAfterMap.get(unit)
           if (abstractionsAfter.isDefined) {
-            printWriter.println("\t\t" + abstractionsAfter.get)
+            printWriter.println("\t\t" + abstractionsAfter.get.toList.sortBy(_.toString()))
           }
           if ((abstractions.isDefined && abstractions.get.nonEmpty) || (abstractionsAfter.isDefined && abstractionsAfter.get.nonEmpty)) printWriter.println("\tUnit: " + unit)
           if (abstractions.isDefined) {
-            printWriter.println("\t\t" + abstractions.get)
+            printWriter.println("\t\t" + abstractions.get.toList.sortBy(_.toString()))
           }
           printWriter.println()
         }

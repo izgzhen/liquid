@@ -60,7 +60,7 @@ class TestAnalysis extends TestCase {
     val transformer = new TestDependencyPropTransformer(method, sinkStmt.asInstanceOf[Stmt], config)
     testAnalysis(new Transform("wjtp.constantProp", transformer),
       "src/test/resources/abstraction.txt", outputPath, config)
-    assertEquals(1, transformer.constants.size)
+    assertEquals(2, transformer.constants.size)
   }
 
   @Test def testConstantBackPropAnalysis(): Unit = {
