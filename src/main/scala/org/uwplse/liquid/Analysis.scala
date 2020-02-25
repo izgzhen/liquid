@@ -209,6 +209,8 @@ object Analysis {
   private val backwardSolverMeasure = new Measure("backwardSolver.solve")
   private val forwardSolverMeasure  = new Measure("forwardSolver.solve")
 
+  def getStats: Map[String, Double] = backwardSolverMeasure.getStats ++ forwardSolverMeasure.getStats
+
   /**
    * Currently we use this one instead of a global flow computation in [[dependencyPropAnalysis]]
    * This one might be slower since it could invoke a lot of IFDS analyses, which is measured by the above two

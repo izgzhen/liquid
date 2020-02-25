@@ -5,8 +5,8 @@ import java.nio.file.{FileSystems, Path, StandardWatchEventKinds}
 
 import com.semantic_graph.JsonUtil
 import org.uwplse.liquid.analysis.MatchTransformer
-import org.uwplse.liquid.spec.{ConcreteVal, SpecParser}
-import soot.{SootClass, Transform}
+import org.uwplse.liquid.spec.SpecParser
+import soot.Transform
 
 import scala.io.Source
 import scala.jdk.CollectionConverters._
@@ -40,7 +40,8 @@ object Match {
         "stats" -> Map(
           "allAppClasses" -> Analysis.getAllAppClasses.size,
           "allMethods" -> Analysis.getAllMethods.size,
-          "spentNanoSeconds" -> spentNanoSeconds
+          "spentNanoSeconds" -> spentNanoSeconds,
+          "analysisStats" -> Analysis.getStats
         ),
         "results" -> ret
       )))
@@ -48,7 +49,6 @@ object Match {
     }
     ret
   }
-
 
   def run(config: Config, specPath: String, outPath: String) : Unit = {
     Analysis.setup(config)

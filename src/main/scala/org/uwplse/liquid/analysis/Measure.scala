@@ -15,4 +15,9 @@ class Measure(val id: String) {
 //    }
     ret
   }
+
+  def getStats: Map[String, Double] = Map(
+    id + ".avgSeconds" -> statsInSeconds.sum / statsInSeconds.size,
+    id + ".count" -> statsInSeconds.size
+  )
 }
