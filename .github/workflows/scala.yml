@@ -20,6 +20,11 @@ jobs:
       with:
         path: "~/.sbt"
         key: ${{ runner.os }}-node-${{ hashFiles('**/build.sbt') }}
+    - name: Install msbase.scala
+      run:
+        git clone https://github.com/izgzhen/msbase.scala ../
+        cd ../msbase.scala
+        sbt publishM2
     - name: Init local deps
       run: make init
     - name: Build test dependencies

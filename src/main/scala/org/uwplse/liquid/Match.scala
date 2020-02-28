@@ -3,7 +3,7 @@ package org.uwplse.liquid
 import java.io.{BufferedWriter, FileWriter}
 import java.nio.file.{FileSystems, Path, StandardWatchEventKinds}
 
-import com.semantic_graph.JsonUtil
+import io.github.izgzhen.msbase.JsonUtil
 import org.uwplse.liquid.analysis.MatchTransformer
 import org.uwplse.liquid.spec.SpecParser
 import soot.Transform
@@ -19,6 +19,11 @@ object SootInputMode {
 }
 
 object Match {
+  def mapToSort(m: Map[String, String]): String = {
+    val sortedKeys = m.keySet.toList.sorted
+    sortedKeys.map(k => m(k)).mkString("|")
+  }
+
   def runOnce(config: Config, specPath: String, outPath: Option[String]) : List[Map[String, String]] = {
     val text = Source.fromFile(specPath)
     val specParser = new SpecParser()
@@ -31,7 +36,7 @@ object Match {
     soot.PackManager.v.runPacks()
     val spentNanoSeconds = System.nanoTime() - startTime
 
-    val ret = transformer.matchedAll
+    val ret = transformer.matchedAll.sortBy(mapToSort)
 
     if (outPath.isDefined) {
       println("Serializing " + ret.size + " results...")
