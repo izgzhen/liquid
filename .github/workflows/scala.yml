@@ -21,7 +21,7 @@ jobs:
         path: "~/.sbt"
         key: ${{ runner.os }}-node-${{ hashFiles('**/build.sbt') }}
     - name: Install msbase.scala
-      run:
+      run: |
         git clone https://github.com/izgzhen/msbase.scala ../
         cd ../msbase.scala
         sbt publishM2
