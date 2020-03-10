@@ -1,4 +1,5 @@
 whitelistPackagePrefixes:
+- androidx
 - com.unity3d
 - bolts
 - com.hp
